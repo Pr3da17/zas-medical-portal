@@ -4,6 +4,7 @@
 
 export const notificationService = {
   activeCodes: new Map(),
+  lastSentCode: null,
 
   /**
    * Simule l'envoi d'un SMS au patient
@@ -11,6 +12,7 @@ export const notificationService = {
   async sendSMSVerification(phone) {
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     this.activeCodes.set(phone, code);
+    this.lastSentCode = code;
     
     console.log(`%c [SMS SENT to ${phone}] Code: ${code} `, 'background: #00A5AD; color: white; font-weight: bold;');
     
@@ -32,5 +34,9 @@ export const notificationService = {
    */
   verifyCode(phone, inputCode) {
     return this.activeCodes.get(phone) === inputCode;
+  },
+
+  getLastCode() {
+    return this.lastSentCode;
   }
 };
