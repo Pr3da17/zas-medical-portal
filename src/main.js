@@ -18,7 +18,9 @@ const state = {
     doctor: null,
     date: null,
     time: null,
+    verificationMethod: "phone",
     phone: "",
+    email: "",
     companionEmail: ""
   },
   isLoading: false,
@@ -31,6 +33,16 @@ const state = {
 };
 
 const stepsOrder = ["profile", "specialty", "campus", "doctor", "schedule", "contact", "verification", "confirm", "questionnaire", "success"];
+const progressSteps = [
+  { key: "specialty", label: "progress_specialty" },
+  { key: "campus", label: "progress_campus" },
+  { key: "doctor", label: "progress_doctor" },
+  { key: "schedule", label: "progress_schedule" },
+  { key: "contact", label: "progress_contact" },
+  { key: "verification", label: "progress_verification" },
+  { key: "confirm", label: "progress_confirm" },
+  { key: "questionnaire", label: "progress_questionnaire" }
+];
 
 function t(key) {
   return translations[state.lang]?.[key] || translations.en?.[key] || key;
@@ -45,16 +57,19 @@ function getWeekNumber(date) {
 
 function resetSelectionsFromStep(step) {
   const resetMap = {
-    specialty: ["specialtyId", "specialtyKey", "campusId", "doctor", "date", "time", "phone", "companionEmail"],
-    campus: ["campusId", "doctor", "date", "time", "phone", "companionEmail"],
-    doctor: ["doctor", "date", "time", "phone", "companionEmail"],
-    schedule: ["date", "time", "phone", "companionEmail"],
-    contact: ["phone", "companionEmail"]
+    specialty: ["specialtyId", "specialtyKey", "campusId", "doctor", "date", "time", "phone", "email", "companionEmail"],
+    campus: ["campusId", "doctor", "date", "time", "phone", "email", "companionEmail"],
+    doctor: ["doctor", "date", "time", "phone", "email", "companionEmail"],
+    schedule: ["date", "time", "phone", "email", "companionEmail"],
+    contact: ["phone", "email", "companionEmail"]
   };
 
   (resetMap[step] || []).forEach((key) => {
     state.selections[key] = key === "doctor" ? null : "";
   });
+  if (resetMap[step]) {
+    state.selections.verificationMethod = "phone";
+  }
 
   if (["specialty", "campus", "doctor", "schedule"].includes(step)) {
     if (step === "specialty") {
@@ -74,11 +89,15 @@ function canNavigateTo(step) {
     doctor: Boolean(state.selections.campusId),
     schedule: Boolean(state.selections.doctor),
     contact: Boolean(state.selections.doctor),
-    verification: Boolean(state.selections.phone),
-    confirm: Boolean(state.selections.phone),
-    questionnaire: Boolean(state.selections.phone)
+    verification: Boolean(state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email),
+    confirm: Boolean(state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email),
+    questionnaire: Boolean(state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email)
   };
   return requirements[step] ?? true;
+}
+
+function getVerificationTarget() {
+  return state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email;
 }
 
 async function navigateTo(nextStep, { replaceHistory = false } = {}) {
@@ -121,9 +140,12 @@ function renderHeader() {
     ? "px-8 py-6 rounded-[32px] text-xl bg-slate-100 text-hospital-primary font-black uppercase border-4 border-slate-200 hover:bg-slate-200 transition-all shadow-md"
     : "px-6 py-4 rounded-[24px] bg-slate-100 text-hospital-primary font-black uppercase text-sm border-2 border-slate-200 hover:bg-slate-200 transition-all";
 
+  const currentProgressIndex = progressSteps.findIndex((step) => step.key === state.step);
+
   return `
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-6">
-      <div class="container mx-auto flex items-center justify-between">
+      <div class="container mx-auto flex flex-col gap-5">
+        <div class="flex items-center justify-between">
         <div class="flex items-center gap-5">
           <button id="btn-open-sidebar" class="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-hospital-primary text-3xl border-2 border-slate-100 hover:bg-slate-100 transition-all shadow-sm">☰</button>
           <div class="flex items-center gap-5 cursor-pointer" id="logo-home">
@@ -135,12 +157,27 @@ function renderHeader() {
           </div>
         </div>
         <div class="flex items-center gap-4 md:gap-8">
-          <div class="hidden md:flex items-center gap-3">${stepsOrder.map((step, index) => `<div class="progress-segment ${state.mode === "beginner" ? "w-8 h-3" : "w-12 h-2"} ${index <= currentIdx ? "active" : ""}"></div>`).join("")}</div>
           <button id="tuto-btn" class="${tutorialClasses}">${t("tuto_btn")}</button>
           <button id="voice-toggle" title="${voice.isListening ? t("voice_stop") : t("voice_start")}" class="w-16 h-16 rounded-[24px] ${voice.isListening ? "bg-hospital-primary text-white" : "bg-hospital-secondary text-hospital-primary"} flex items-center justify-center border-2 border-hospital-primary/10 transition-all shadow-lg">
             <span class="text-3xl">${voice.isListening ? "🎙️" : "🎤"}</span>
           </button>
         </div>
+      </div>
+      ${currentProgressIndex >= 0 ? `
+        <div class="rounded-[28px] border-2 border-slate-100 bg-white/90 px-5 py-4 shadow-sm">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div class="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">${t("progress_title")}</div>
+              <div class="mt-1 text-lg font-black text-hospital-primary">${currentProgressIndex + 1}/${progressSteps.length} · ${t(progressSteps[currentProgressIndex].label)}</div>
+            </div>
+            <div class="w-full md:w-[420px]">
+              <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full rounded-full bg-hospital-primary transition-all duration-500" style="width:${((currentProgressIndex + 1) / progressSteps.length) * 100}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : ""}
       </div>
     </header>
   `;
@@ -149,20 +186,12 @@ function renderHeader() {
 function renderSidebar() {
   if (!state.isSidebarOpen) return "";
 
-  let links = [];
-  if (state.mode === "beginner") {
-    links = [
-      { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
-      { icon: "📞", key: "menu_contact", step: "contact_page", color: "bg-zas-coral text-white" }
-    ];
-  } else {
-    links = [
-      { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
-      { icon: "📄", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
-      { icon: "❓", key: "menu_faq", step: "faq", color: "bg-white border-4 border-slate-100 text-slate-800" },
-      { icon: "📞", key: "menu_contact", step: "contact_page", color: "bg-white border-4 border-slate-100 text-slate-800" }
-    ];
-  }
+  const links = [
+    { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
+    { icon: "📄", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
+    { icon: "❓", key: "menu_faq", step: "faq", color: "bg-white border-4 border-slate-100 text-slate-800" },
+    { icon: "📞", key: "menu_contact", step: "contact_page", color: state.mode === "beginner" ? "bg-zas-coral text-white" : "bg-white border-4 border-slate-100 text-slate-800" }
+  ];
 
   return `
     <div class="fixed inset-0 z-[100] flex">
@@ -179,7 +208,7 @@ function renderSidebar() {
           ${links.map((link) => `
             <button class="sidebar-link w-full text-left flex items-center gap-8 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${link.color}" data-step="${link.step}">
               <span class="text-5xl">${link.icon}</span>
-              <span class="font-black text-2xl tracking-tighter uppercase">${t(link.key)}</span>
+              <span class="font-black text-2xl tracking-tighter uppercase ${link.color.includes("text-white") ? "text-white" : ""}">${t(link.key)}</span>
             </button>
           `).join("")}
         </div>
@@ -201,7 +230,7 @@ function renderFooter() {
       <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
         <button id="btn-back" class="btn-outline min-w-[220px] text-2xl py-6 px-10 rounded-[32px]">⬅️ ${t("back")}</button>
         <button id="btn-undo" class="${state.mode === "beginner" ? "flex" : "hidden"} btn-outline border-zas-coral text-zas-coral bg-red-50 py-6 px-10 rounded-[32px] text-2xl">↩️ ${t("undo")}</button>
-        <div class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] flex items-center gap-3"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>${t("help_fallback")}</div>
+        <div class="text-slate-500 font-black uppercase text-base md:text-lg tracking-[0.18em] flex items-center gap-4 text-center"><span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>${t("help_fallback")}</div>
       </div>
     </footer>
   `;
@@ -244,6 +273,85 @@ function renderPlaceholder(titleKey, subtitleKey) {
   `;
 }
 
+function renderDocumentsPage() {
+  const documents = [
+    { title: t("doc_card_1_title"), desc: t("doc_card_1_desc"), icon: "📄" },
+    { title: t("doc_card_2_title"), desc: t("doc_card_2_desc"), icon: "🧪" },
+    { title: t("doc_card_3_title"), desc: t("doc_card_3_desc"), icon: "📝" }
+  ];
+
+  return `
+    <div class="max-w-5xl mx-auto space-y-10 reveal">
+      <div class="text-center space-y-4">
+        <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter">${t("page_documents_title")}</h1>
+        <p class="text-xl font-bold text-slate-400 max-w-3xl mx-auto">${t("page_documents_intro")}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        ${documents.map((document) => `
+          <div class="card-zas space-y-4">
+            <div class="text-5xl">${document.icon}</div>
+            <h2 class="text-2xl font-black text-hospital-primary tracking-tight">${document.title}</h2>
+            <p class="text-slate-500 font-bold leading-relaxed">${document.desc}</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderFaqPage() {
+  const faqs = [
+    { q: t("faq_q1"), a: t("faq_a1") },
+    { q: t("faq_q2"), a: t("faq_a2") },
+    { q: t("faq_q3"), a: t("faq_a3") },
+    { q: t("faq_q4"), a: t("faq_a4") }
+  ];
+
+  return `
+    <div class="max-w-4xl mx-auto space-y-8 reveal">
+      <div class="text-center space-y-4">
+        <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter">${t("page_faq_title")}</h1>
+        <p class="text-xl font-bold text-slate-400 max-w-3xl mx-auto">${t("page_faq_intro")}</p>
+      </div>
+      <div class="space-y-4">
+        ${faqs.map((faq) => `
+          <div class="card-zas space-y-3">
+            <h2 class="text-2xl font-black text-hospital-primary">${faq.q}</h2>
+            <p class="text-slate-500 font-bold leading-relaxed">${faq.a}</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderContactPage() {
+  const cards = [
+    { title: t("contact_phone_title"), value: "03 217 71 11", icon: "📞" },
+    { title: t("contact_email_title"), value: t("contact_email_value"), icon: "✉️" },
+    { title: t("contact_address_title"), value: t("contact_address_value"), icon: "📍" },
+    { title: t("contact_hours_title"), value: t("contact_hours_value"), icon: "🕒" }
+  ];
+
+  return `
+    <div class="max-w-5xl mx-auto space-y-10 reveal">
+      <div class="text-center space-y-4">
+        <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter">${t("page_contact_title")}</h1>
+        <p class="text-xl font-bold text-slate-400 max-w-3xl mx-auto">${t("page_contact_intro")}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        ${cards.map((card) => `
+          <div class="card-zas space-y-4">
+            <div class="text-5xl">${card.icon}</div>
+            <h2 class="text-2xl font-black text-hospital-primary">${card.title}</h2>
+            <p class="text-xl font-bold text-slate-600 leading-relaxed">${card.value}</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderProfileSelection() {
   const appointmentsData = localStorage.getItem("zas_appointments");
   const appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
@@ -261,8 +369,8 @@ function renderProfileSelection() {
               <div class="text-hospital-primary font-black mt-2">${app.date} - ${app.time}</div>
             </div>
             <div class="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
-              <button class="btn-edit-appt flex-1 md:flex-none bg-white border-2 border-slate-200 text-hospital-primary hover:bg-slate-100 hover:border-hospital-primary px-4 py-3 md:py-2 rounded-xl text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2" data-id="${app.id}">✏️ ${t("edit_appointment")}</button>
-              <button class="btn-cancel-appt flex-1 md:flex-none bg-red-50 text-zas-coral hover:bg-red-100 px-4 py-3 md:py-2 rounded-xl text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2" data-id="${app.id}">🗑️ ${t("cancel_appointment")}</button>
+              <button class="btn-edit-appt flex-1 md:flex-none bg-white border-2 border-slate-200 text-hospital-primary hover:bg-slate-100 hover:border-hospital-primary px-4 py-3 md:py-2 rounded-xl text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2 min-w-[120px]" data-id="${app.id}">✏️ ${t("edit_appointment")}</button>
+              <button class="btn-cancel-appt flex-1 md:flex-none bg-red-50 text-zas-coral hover:bg-red-100 px-4 py-3 md:py-2 rounded-xl text-xs font-black transition-all shadow-sm flex items-center justify-start md:justify-center gap-2 min-w-[128px]" data-id="${app.id}">🗑️ ${t("cancel_appointment")}</button>
             </div>
           </div>
         `).join("")}
@@ -436,9 +544,16 @@ function renderContactInfo() {
     <div class="space-y-16 reveal">
       <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter text-center">${t("patient_info")}</h1>
       <div class="card-zas max-w-3xl mx-auto space-y-12">
+        <div class="space-y-4">
+          <label class="block font-black text-2xl text-slate-400 uppercase tracking-tighter">${t("verification_method_title")}</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button type="button" class="verification-method-btn rounded-[28px] border-4 px-6 py-6 text-left font-black text-xl transition-all ${state.selections.verificationMethod === "phone" ? "border-hospital-primary bg-hospital-secondary text-hospital-primary shadow-md" : "border-slate-100 bg-white text-slate-500"}" data-method="phone">${t("verify_by_phone")}</button>
+            <button type="button" class="verification-method-btn rounded-[28px] border-4 px-6 py-6 text-left font-black text-xl transition-all ${state.selections.verificationMethod === "email" ? "border-hospital-primary bg-hospital-secondary text-hospital-primary shadow-md" : "border-slate-100 bg-white text-slate-500"}" data-method="email">${t("verify_by_email")}</button>
+          </div>
+        </div>
         <div class="space-y-6">
-          <label class="block font-black text-2xl text-slate-400 uppercase tracking-tighter">${t("phone")}</label>
-          <input type="tel" id="input-phone" value="${state.selections.phone}" placeholder="04XX XX XX XX" class="w-full bg-slate-50 border-4 border-gray-100 p-8 rounded-[40px] text-5xl font-black outline-none focus:border-hospital-primary shadow-inner" />
+          <label class="block font-black text-2xl text-slate-400 uppercase tracking-tighter">${state.selections.verificationMethod === "phone" ? t("phone") : t("email")}</label>
+          <input type="${state.selections.verificationMethod === "phone" ? "tel" : "email"}" id="${state.selections.verificationMethod === "phone" ? "input-phone" : "input-email"}" value="${state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email}" placeholder="${state.selections.verificationMethod === "phone" ? "04XX XX XX XX" : t("email_placeholder")}" class="w-full bg-slate-50 border-4 border-gray-100 p-8 rounded-[40px] text-4xl md:text-5xl font-black outline-none focus:border-hospital-primary shadow-inner" />
           <p id="phone-error" class="hidden text-zas-coral font-bold mt-4 text-xl bg-red-50 p-6 rounded-2xl"></p>
         </div>
         <div class="pt-10 border-t-4 border-dashed border-gray-100">
@@ -463,11 +578,12 @@ function renderContactInfo() {
 }
 
 function renderSmsVerification() {
+  const sentMessage = state.selections.verificationMethod === "phone" ? t("verification_phone_sent") : t("verification_email_sent");
   return `
     <div class="space-y-16 reveal text-center max-w-2xl mx-auto">
       <div class="space-y-6">
-        <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${t("magic_link_sent")}</h1>
-        <p class="text-2xl font-bold text-slate-400 mt-2">${t("code_sent_to")} <span class="text-hospital-primary">${state.selections.phone}</span></p>
+        <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${sentMessage}</h1>
+        <p class="text-2xl font-bold text-slate-400 mt-2">${t("verification_sent_intro")} <span class="text-hospital-primary">${getVerificationTarget()}</span></p>
       </div>
       <div class="card-zas space-y-12">
         <div class="inline-flex items-center gap-3 rounded-full bg-hospital-secondary px-6 py-3 text-lg font-black text-hospital-primary">
@@ -556,13 +672,13 @@ function renderStep() {
     case "success":
       return renderSuccess();
     case "faq":
-      return renderPlaceholder("page_faq_title", "page_faq_subtitle");
+      return renderFaqPage();
     case "documents":
-      return renderPlaceholder("page_documents_title", "page_documents_subtitle");
+      return renderDocumentsPage();
     case "news":
       return renderPlaceholder("page_news_title", "page_news_subtitle");
     case "contact_page":
-      return renderPlaceholder("page_contact_title", "page_contact_subtitle");
+      return renderContactPage();
     default:
       return "Error";
   }
@@ -715,6 +831,14 @@ function attachEventListeners() {
     };
   });
 
+  document.querySelectorAll(".verification-method-btn").forEach((button) => {
+    button.onclick = async () => {
+      state.selections.verificationMethod = button.dataset.method;
+      state.verificationError = "";
+      await updateUI();
+    };
+  });
+
   const btnConfirmSchedule = document.getElementById("btn-confirm-schedule");
   if (btnConfirmSchedule) btnConfirmSchedule.onclick = () => navigateTo("contact");
 
@@ -732,22 +856,39 @@ function attachEventListeners() {
   if (btnSubmitContact) {
     btnSubmitContact.onclick = async () => {
       const phoneInput = document.getElementById("input-phone");
+      const emailInput = document.getElementById("input-email");
       const companionInput = document.getElementById("input-companion");
       const error = document.getElementById("phone-error");
-      const phone = phoneInput.value.trim();
+      const phone = phoneInput?.value.trim() || "";
+      const email = emailInput?.value.trim() || "";
 
-      if (phone.replace(/\D/g, "").length < 10) {
-        error.textContent = t("check_before_submit");
-        error.classList.remove("hidden");
-        return;
+      if (state.selections.verificationMethod === "phone") {
+        if (phone.replace(/\D/g, "").length < 10) {
+          error.textContent = t("check_before_submit");
+          error.classList.remove("hidden");
+          return;
+        }
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          error.textContent = t("invalid_email");
+          error.classList.remove("hidden");
+          return;
+        }
       }
 
       state.selections.phone = phone;
+      state.selections.email = email;
       state.selections.companionEmail = companionInput?.value.trim() || "";
       state.verificationError = "";
+      error.classList.add("hidden");
       state.isLoading = true;
       await updateUI();
-      await notificationService.sendSMSVerification(phone);
+      if (state.selections.verificationMethod === "phone") {
+        await notificationService.sendSMSVerification(phone);
+      } else {
+        await notificationService.sendEmailVerification(email);
+      }
       state.isLoading = false;
       await navigateTo("verification");
     };
@@ -757,7 +898,7 @@ function attachEventListeners() {
   if (btnVerifyCode) {
     btnVerifyCode.onclick = async () => {
       const code = Array.from(document.querySelectorAll(".code-input")).map((input) => input.value).join("");
-      if (notificationService.verifyCode(state.selections.phone, code)) {
+      if (notificationService.verifyCode(state.selections.verificationMethod, getVerificationTarget(), code)) {
         state.verificationError = "";
         await navigateTo("confirm");
       } else {
@@ -794,7 +935,12 @@ function attachEventListeners() {
         const appointments = JSON.parse(appointmentsData);
         const app = appointments.find((a) => a.id === id);
         if (app) {
-          state.selections = { ...app };
+          state.selections = {
+            ...state.selections,
+            verificationMethod: app.verificationMethod || (app.email ? "email" : "phone"),
+            email: app.email || "",
+            ...app
+          };
           state.editingAppointmentId = id;
           state.isLoading = true;
           await updateUI();
