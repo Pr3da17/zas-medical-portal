@@ -7,13 +7,14 @@ import { botBrain } from "./ai/brain.js";
 import { startTutorialForStep } from "./tutorial.js";
 
 const state = {
-  lang: "en",
+  lang: "nl",
   mode: "beginner",
   step: "profile",
-  data: { specialties: [], doctors: [], slots: [] },
+  data: { specialties: [], hospitals: [], doctors: [], slots: [] },
   selections: {
     specialtyId: null,
     specialtyKey: null,
+    campusId: null,
     doctor: null,
     date: null,
     time: null,
@@ -25,10 +26,11 @@ const state = {
   chatHistory: [],
   isSidebarOpen: false,
   pendingHighlightId: null,
+  editingAppointmentId: null,
   verificationError: ""
 };
 
-const stepsOrder = ["profile", "specialty", "doctor", "schedule", "contact", "verification", "confirm"];
+const stepsOrder = ["profile", "specialty", "campus", "doctor", "schedule", "contact", "verification", "confirm", "questionnaire", "success"];
 
 function t(key) {
   return translations[state.lang]?.[key] || translations.en?.[key] || key;
@@ -43,7 +45,8 @@ function getWeekNumber(date) {
 
 function resetSelectionsFromStep(step) {
   const resetMap = {
-    specialty: ["specialtyId", "specialtyKey", "doctor", "date", "time", "phone", "companionEmail"],
+    specialty: ["specialtyId", "specialtyKey", "campusId", "doctor", "date", "time", "phone", "companionEmail"],
+    campus: ["campusId", "doctor", "date", "time", "phone", "companionEmail"],
     doctor: ["doctor", "date", "time", "phone", "companionEmail"],
     schedule: ["date", "time", "phone", "companionEmail"],
     contact: ["phone", "companionEmail"]
@@ -53,9 +56,12 @@ function resetSelectionsFromStep(step) {
     state.selections[key] = key === "doctor" ? null : "";
   });
 
-  if (["specialty", "doctor", "schedule"].includes(step)) {
-    if (step === "specialty") state.selections.specialtyId = null;
-    if (step === "specialty") state.selections.specialtyKey = null;
+  if (["specialty", "campus", "doctor", "schedule"].includes(step)) {
+    if (step === "specialty") {
+      state.selections.specialtyId = null;
+      state.selections.specialtyKey = null;
+    }
+    if (step === "specialty" || step === "campus") state.selections.campusId = null;
     if (step !== "contact") state.selections.date = null;
     if (step !== "contact") state.selections.time = null;
   }
@@ -64,11 +70,13 @@ function resetSelectionsFromStep(step) {
 function canNavigateTo(step) {
   const requirements = {
     specialty: true,
-    doctor: Boolean(state.selections.specialtyId),
+    campus: Boolean(state.selections.specialtyId),
+    doctor: Boolean(state.selections.campusId),
     schedule: Boolean(state.selections.doctor),
     contact: Boolean(state.selections.doctor),
     verification: Boolean(state.selections.phone),
-    confirm: Boolean(state.selections.phone)
+    confirm: Boolean(state.selections.phone),
+    questionnaire: Boolean(state.selections.phone)
   };
   return requirements[step] ?? true;
 }
@@ -147,18 +155,10 @@ function renderSidebar() {
       { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
       { icon: "📞", key: "menu_contact", step: "contact_page", color: "bg-zas-coral text-white" }
     ];
-  } else if (state.mode === "intermediate") {
-    links = [
-      { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
-      { icon: "📄", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
-      { icon: "❓", key: "menu_faq", step: "faq", color: "bg-white border-4 border-slate-100 text-slate-800" },
-      { icon: "📞", key: "menu_contact", step: "contact_page", color: "bg-white border-4 border-slate-100 text-slate-800" }
-    ];
   } else {
     links = [
       { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
-      { icon: "🗂️", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
-      { icon: "📰", key: "menu_news", step: "news", color: "bg-white border-4 border-slate-100 text-slate-800" },
+      { icon: "📄", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
       { icon: "❓", key: "menu_faq", step: "faq", color: "bg-white border-4 border-slate-100 text-slate-800" },
       { icon: "📞", key: "menu_contact", step: "contact_page", color: "bg-white border-4 border-slate-100 text-slate-800" }
     ];
@@ -245,19 +245,54 @@ function renderPlaceholder(titleKey, subtitleKey) {
 }
 
 function renderProfileSelection() {
+  const appointmentsData = localStorage.getItem("zas_appointments");
+  const appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
+  
+  const appointmentsWidget = appointments.length > 0 ? `
+    <div class="max-w-2xl mx-auto bg-white rounded-[32px] p-8 border-4 border-slate-100 shadow-sm mt-12 mb-12">
+      <h2 class="text-2xl font-black text-hospital-primary uppercase tracking-tighter mb-6">${t("upcoming_appointments")}</h2>
+      <div class="space-y-4">
+        ${appointments.map((app) => `
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-6 p-6 rounded-[24px] bg-slate-50 border-2 border-slate-100">
+            <div class="w-16 h-16 bg-hospital-secondary text-hospital-primary rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner shrink-0 hidden sm:flex">📅</div>
+            <div class="text-left flex-grow">
+              <div class="font-black text-xl text-slate-800">${app.doctor?.name || app.doctorName}</div>
+              <div class="text-slate-500 font-bold text-sm uppercase tracking-widest">${t(app.specialtyKey)}</div>
+              <div class="text-hospital-primary font-black mt-2">${app.date} - ${app.time}</div>
+            </div>
+            <div class="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+              <button class="btn-edit-appt flex-1 md:flex-none bg-white border-2 border-slate-200 text-hospital-primary hover:bg-slate-100 hover:border-hospital-primary px-4 py-3 md:py-2 rounded-xl text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2" data-id="${app.id}">✏️ ${t("edit_appointment")}</button>
+              <button class="btn-cancel-appt flex-1 md:flex-none bg-red-50 text-zas-coral hover:bg-red-100 px-4 py-3 md:py-2 rounded-xl text-xs font-black uppercase transition-all shadow-sm flex items-center justify-center gap-2" data-id="${app.id}">🗑️ ${t("cancel_appointment")}</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  ` : `
+    <div class="max-w-2xl mx-auto bg-white rounded-[32px] p-8 border-4 border-slate-100 shadow-sm mt-12 mb-12 text-center opacity-70">
+      <h2 class="text-xl font-black text-slate-400 uppercase tracking-tighter mb-2">${t("upcoming_appointments")}</h2>
+      <p class="text-slate-400 font-bold">${t("no_appointments")}</p>
+    </div>
+  `;
+
   return `
-    <div class="max-w-6xl mx-auto space-y-20 py-12 reveal relative">
+    <div class="max-w-6xl mx-auto space-y-12 py-12 reveal relative">
       <button id="tuto-btn-profile" class="absolute top-0 right-4 md:right-0 px-10 py-6 rounded-[32px] text-xl bg-white text-hospital-primary font-black uppercase border-4 border-slate-100 hover:bg-slate-50 transition-all shadow-lg hover:scale-105">${t("tuto_btn")}</button>
       <div class="text-center space-y-8">
         <div class="flex justify-center mb-8"><div class="w-24 h-24 bg-hospital-primary text-white rounded-[28px] flex items-center justify-center font-black text-5xl shadow-2xl">Z</div></div>
         <h1 class="text-5xl md:text-8xl font-black text-hospital-primary tracking-tighter leading-none uppercase">${t("title")}</h1>
-        <p class="text-2xl text-slate-400 font-bold max-w-2xl mx-auto">${t("profiling_question")}</p>
+      </div>
+
+      ${appointmentsWidget}
+
+      <div class="text-center">
+        <p class="text-2xl text-slate-400 font-bold max-w-2xl mx-auto mb-8">${t("profiling_question")}</p>
       </div>
       <div class="flex justify-center gap-4">
         ${["fr", "nl", "en"].map((lang) => `<button class="lang-btn px-10 py-5 rounded-[24px] border-4 font-black text-xl transition-all ${state.lang === lang ? "bg-hospital-primary text-white border-hospital-primary shadow-xl" : "bg-white text-slate-300 border-gray-100"}" data-lang="${lang}">${lang.toUpperCase()}</button>`).join("")}
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 px-4">
-        ${["beginner", "intermediate", "advanced"].map((mode, index) => `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 px-4 max-w-4xl mx-auto">
+        ${["beginner", "intermediate"].map((mode, index) => `
           <div class="profile-option group reveal" style="animation-delay:${index * 0.1}s" data-mode="${mode}">
             <div class="text-8xl mb-8 group-hover:scale-110 transition-transform">${mode === "beginner" ? "🐢" : mode === "intermediate" ? "🚶" : "🚀"}</div>
             <h3 class="text-3xl font-black text-hospital-primary uppercase tracking-tighter mb-4">${t(mode)}</h3>
@@ -304,6 +339,27 @@ function renderSpecialtySelection() {
               </div>
             </div>
           </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderCampusSelection() {
+  const isBeginner = state.mode === "beginner";
+  return `
+    <div class="space-y-16 reveal max-w-5xl mx-auto">
+      <div class="text-center space-y-4">
+        <h1 class="${isBeginner ? "text-7xl" : "text-5xl"} font-black text-hospital-primary uppercase tracking-tighter">${t("select_campus")}</h1>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        ${state.data.hospitals.map((hospital) => `
+          <button class="campus-btn p-8 rounded-[32px] border-4 border-slate-100 bg-white hover:border-hospital-primary hover:bg-hospital-secondary transition-all shadow-sm flex items-center justify-between group" data-id="${hospital.id}">
+            <div class="text-left">
+              <div class="font-black text-3xl text-slate-800 tracking-tighter">${hospital.name}</div>
+            </div>
+            <span class="text-4xl opacity-0 group-hover:opacity-100 transition-opacity">🏥</span>
+          </button>
         `).join("")}
       </div>
     </div>
@@ -447,6 +503,26 @@ function renderConfirmation() {
   `;
 }
 
+function renderQuestionnaire() {
+  return `
+    <div class="space-y-16 reveal max-w-3xl mx-auto">
+      <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter text-center">${t("questionnaire_title")}</h1>
+      <p class="text-center text-xl font-bold text-slate-400">${t("questionnaire_desc")}</p>
+      <div class="card-zas space-y-8">
+        <div class="space-y-4">
+          <label class="block font-black text-xl text-slate-700 uppercase">${t("question_history")}</label>
+          <textarea class="w-full bg-slate-50 border-4 border-gray-100 p-6 rounded-[24px] text-lg outline-none focus:border-hospital-primary h-32"></textarea>
+        </div>
+        <div class="space-y-4">
+          <label class="block font-black text-xl text-slate-700 uppercase">${t("question_medication")}</label>
+          <input type="text" class="w-full bg-slate-50 border-4 border-gray-100 p-6 rounded-[24px] text-lg outline-none focus:border-hospital-primary" />
+        </div>
+        <button id="btn-submit-questionnaire" class="btn-primary w-full text-3xl py-8 uppercase tracking-widest font-black">${t("submit_questionnaire")}</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderSuccess() {
   return `
     <div class="text-center space-y-20 py-20 reveal max-w-4xl mx-auto">
@@ -463,6 +539,8 @@ function renderStep() {
       return renderProfileSelection();
     case "specialty":
       return renderSpecialtySelection();
+    case "campus":
+      return renderCampusSelection();
     case "doctor":
       return renderDoctorSelection();
     case "schedule":
@@ -473,6 +551,8 @@ function renderStep() {
       return renderSmsVerification();
     case "confirm":
       return renderConfirmation();
+    case "questionnaire":
+      return renderQuestionnaire();
     case "success":
       return renderSuccess();
     case "faq":
@@ -592,12 +672,24 @@ function attachEventListeners() {
 
   document.querySelectorAll(".specialty-btn").forEach((button) => {
     button.onclick = async () => {
-      resetSelectionsFromStep("doctor");
+      resetSelectionsFromStep("campus");
       state.selections.specialtyId = button.dataset.id;
       state.selections.specialtyKey = button.dataset.key;
       state.isLoading = true;
       await updateUI();
-      state.data.doctors = await api.getDoctorsBySpecialty(button.dataset.id);
+      state.data.hospitals = await api.getHospitals();
+      state.isLoading = false;
+      await navigateTo("campus");
+    };
+  });
+
+  document.querySelectorAll(".campus-btn").forEach((button) => {
+    button.onclick = async () => {
+      resetSelectionsFromStep("doctor");
+      state.selections.campusId = button.dataset.id;
+      state.isLoading = true;
+      await updateUI();
+      state.data.doctors = await api.getDoctorsBySpecialty(state.selections.specialtyId, state.selections.campusId);
       state.isLoading = false;
       await navigateTo("doctor");
     };
@@ -681,6 +773,44 @@ function attachEventListeners() {
   const btnUndo = document.getElementById("btn-undo");
   if (btnUndo) btnUndo.onclick = goBack;
 
+  document.querySelectorAll(".btn-cancel-appt").forEach((button) => {
+    button.onclick = async () => {
+      const id = button.dataset.id;
+      const appointmentsData = localStorage.getItem("zas_appointments");
+      if (appointmentsData) {
+        let appointments = JSON.parse(appointmentsData);
+        appointments = appointments.filter((app) => app.id !== id);
+        localStorage.setItem("zas_appointments", JSON.stringify(appointments));
+        await updateUI();
+      }
+    };
+  });
+
+  document.querySelectorAll(".btn-edit-appt").forEach((button) => {
+    button.onclick = async () => {
+      const id = button.dataset.id;
+      const appointmentsData = localStorage.getItem("zas_appointments");
+      if (appointmentsData) {
+        const appointments = JSON.parse(appointmentsData);
+        const app = appointments.find((a) => a.id === id);
+        if (app) {
+          state.selections = { ...app };
+          state.editingAppointmentId = id;
+          state.isLoading = true;
+          await updateUI();
+          
+          state.data.specialties = await api.getSpecialties();
+          state.data.hospitals = await api.getHospitals();
+          state.data.doctors = await api.getDoctorsBySpecialty(state.selections.specialtyId, state.selections.campusId);
+          state.data.slots = await api.getSlotsByDoctor(state.selections.doctor.id);
+          
+          state.isLoading = false;
+          await navigateTo("schedule");
+        }
+      }
+    };
+  });
+
   const btnConfirmFinal = document.getElementById("btn-confirm-final");
   if (btnConfirmFinal) {
     btnConfirmFinal.onclick = async () => {
@@ -690,9 +820,33 @@ function attachEventListeners() {
       if (state.selections.companionEmail) {
         await notificationService.sendCompanionInvitation(state.selections.companionEmail, state.selections);
       }
+      
+      const appointmentsData = localStorage.getItem("zas_appointments");
+      let appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
+      
+      const newAppt = {
+        id: state.editingAppointmentId || Date.now().toString(),
+        ...state.selections
+      };
+
+      if (state.editingAppointmentId) {
+        appointments = appointments.map(app => app.id === state.editingAppointmentId ? newAppt : app);
+        state.editingAppointmentId = null;
+      } else {
+        appointments.push(newAppt);
+      }
+
+      localStorage.setItem("zas_appointments", JSON.stringify(appointments));
+
       state.isLoading = false;
-      state.step = "success";
-      await updateUI();
+      await navigateTo("questionnaire");
+    };
+  }
+
+  const btnSubmitQuestionnaire = document.getElementById("btn-submit-questionnaire");
+  if (btnSubmitQuestionnaire) {
+    btnSubmitQuestionnaire.onclick = async () => {
+      await navigateTo("success");
     };
   }
 

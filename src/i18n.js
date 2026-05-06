@@ -163,7 +163,18 @@ export const translations = {
     weekday_4: "Jeudi",
     weekday_5: "Vendredi",
     weekday_6: "Samedi",
-    weekday_7: "Dimanche"
+    weekday_7: "Dimanche",
+    upcoming_appointments: "Vos prochains rendez-vous",
+    no_appointments: "Aucun rendez-vous à venir",
+    select_campus: "Choisissez un hôpital",
+    questionnaire_title: "Questionnaire Médical",
+    questionnaire_desc: "Veuillez remplir ces informations complémentaires pour votre médecin.",
+    submit_questionnaire: "Envoyer et terminer",
+    medical_questionnaire: "Questionnaire Médical",
+    edit_appointment: "Modifier",
+    cancel_appointment: "Annuler",
+    question_history: "Avez-vous des antécédents médicaux récents ?",
+    question_medication: "Prenez-vous des médicaments actuellement ?"
   },
   nl: {
     title: "ZAS Antwerpen",
@@ -329,7 +340,18 @@ export const translations = {
     weekday_4: "Donderdag",
     weekday_5: "Vrijdag",
     weekday_6: "Zaterdag",
-    weekday_7: "Zondag"
+    weekday_7: "Zondag",
+    upcoming_appointments: "Uw geplande afspraken",
+    no_appointments: "Geen geplande afspraken",
+    select_campus: "Kies een ziekenhuis",
+    questionnaire_title: "Medische Vragenlijst",
+    questionnaire_desc: "Vul alstublieft deze aanvullende informatie in voor uw arts.",
+    submit_questionnaire: "Verzenden en voltooien",
+    medical_questionnaire: "Medische Vragenlijst",
+    edit_appointment: "Wijzigen",
+    cancel_appointment: "Annuleren",
+    question_history: "Heeft u recente medische antecedenten?",
+    question_medication: "Neemt u momenteel medicijnen?"
   },
   en: {
     title: "ZAS Antwerpen",
@@ -495,6 +517,17 @@ export const translations = {
     weekday_4: "Thursday",
     weekday_5: "Friday",
     weekday_6: "Saturday",
-    weekday_7: "Sunday"
+    weekday_7: "Sunday",
+    upcoming_appointments: "Your upcoming appointments",
+    no_appointments: "No upcoming appointments",
+    select_campus: "Choose a hospital",
+    questionnaire_title: "Medical Questionnaire",
+    questionnaire_desc: "Please fill out this additional information for your doctor.",
+    submit_questionnaire: "Submit and finish",
+    medical_questionnaire: "Medical Questionnaire",
+    edit_appointment: "Edit",
+    cancel_appointment: "Cancel",
+    question_history: "Do you have any recent medical history?",
+    question_medication: "Are you currently taking any medication?"
   }
 };
