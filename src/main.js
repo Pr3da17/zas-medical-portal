@@ -247,7 +247,7 @@ function renderPlaceholder(titleKey, subtitleKey) {
 function renderProfileSelection() {
   const appointmentsData = localStorage.getItem("zas_appointments");
   const appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
-  
+
   const appointmentsWidget = appointments.length > 0 ? `
     <div class="max-w-2xl mx-auto bg-white rounded-[32px] p-8 border-4 border-slate-100 shadow-sm mt-12 mb-12">
       <h2 class="text-2xl font-black text-hospital-primary uppercase tracking-tighter mb-6">${t("upcoming_appointments")}</h2>
@@ -413,11 +413,11 @@ function renderScheduleSelection() {
                 <tr class="group hover:bg-slate-50/50 transition-colors">
                   <td class="p-6 text-center bg-slate-50 border-r-2 border-slate-200 sticky left-0 z-10 font-black text-slate-500 text-lg">${time}</td>
                   ${dates.map((date) => {
-                    const daySlots = state.data.slots.find((slot) => slot.date === date);
-                    const actualTime = daySlots?.times.find((value) => value.startsWith(time.split(":")[0])) || null;
-                    const isAvailable = Boolean(actualTime);
-                    return `<td class="p-3 border-r border-slate-100/50 align-middle">${isAvailable ? `<button class="time-slot-btn w-full py-4 rounded-[18px] text-lg font-black transition-all border-4 ${state.selections.date === date && state.selections.time === actualTime ? "bg-hospital-primary text-white border-hospital-primary shadow-lg scale-105" : "bg-white text-slate-800 border-slate-50 hover:border-hospital-primary hover:bg-hospital-secondary"}" data-date="${date}" data-time="${actualTime}">${actualTime}</button>` : `<div class="w-full h-14 rounded-[18px] bg-slate-50/30 border-2 border-dashed border-slate-100/50 group-hover:bg-slate-100 transition-colors"></div>`}</td>`;
-                  }).join("")}
+    const daySlots = state.data.slots.find((slot) => slot.date === date);
+    const actualTime = daySlots?.times.find((value) => value.startsWith(time.split(":")[0])) || null;
+    const isAvailable = Boolean(actualTime);
+    return `<td class="p-3 border-r border-slate-100/50 align-middle">${isAvailable ? `<button class="time-slot-btn w-full py-4 rounded-[18px] text-lg font-black transition-all border-4 ${state.selections.date === date && state.selections.time === actualTime ? "bg-hospital-primary text-white border-hospital-primary shadow-lg scale-105" : "bg-white text-slate-800 border-slate-50 hover:border-hospital-primary hover:bg-hospital-secondary"}" data-date="${date}" data-time="${actualTime}">${actualTime}</button>` : `<div class="w-full h-14 rounded-[18px] bg-slate-50/30 border-2 border-dashed border-slate-100/50 group-hover:bg-slate-100 transition-colors"></div>`}</td>`;
+  }).join("")}
                 </tr>
               `).join("")}
             </tbody>
@@ -798,12 +798,12 @@ function attachEventListeners() {
           state.editingAppointmentId = id;
           state.isLoading = true;
           await updateUI();
-          
+
           state.data.specialties = await api.getSpecialties();
           state.data.hospitals = await api.getHospitals();
           state.data.doctors = await api.getDoctorsBySpecialty(state.selections.specialtyId, state.selections.campusId);
           state.data.slots = await api.getSlotsByDoctor(state.selections.doctor.id);
-          
+
           state.isLoading = false;
           await navigateTo("schedule");
         }
@@ -820,10 +820,10 @@ function attachEventListeners() {
       if (state.selections.companionEmail) {
         await notificationService.sendCompanionInvitation(state.selections.companionEmail, state.selections);
       }
-      
+
       const appointmentsData = localStorage.getItem("zas_appointments");
       let appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
-      
+
       const newAppt = {
         id: state.editingAppointmentId || Date.now().toString(),
         ...state.selections
