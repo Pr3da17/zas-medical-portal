@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZAS Antwerpen - Validation Accompagnateur</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #FDFDFD; font-family: 'Outfit', sans-serif; }
+    .card-zas { 
+      background: white; border-radius: 48px; padding: 40px; 
+      box-shadow: 0 20px 60px -15px rgba(0,0,0,0.05); border: 1px solid #F1F5F9; 
+    }
+    .btn-primary { 
+      background: #00A5AD; color: white; border-radius: 32px; font-weight: 900; 
+      padding: 24px; width: 100%; transition: all 0.3s;
+      box-shadow: 0 15px 30px -5px rgba(0,165,173,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-4px); box-shadow: 0 25px 50px -10px rgba(0,165,173,0.4); }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-xl w-full space-y-10 text-center">
+    
+    <div class="flex justify-center mb-6">
+      <div class="w-20 h-20 bg-[#00A5AD] rounded-[24px] flex items-center justify-center text-white font-black text-4xl shadow-xl">Z</div>
+    </div>
+
+    <div class="card-zas space-y-8">
+      <h1 class="text-4xl font-black text-[#00A5AD] uppercase tracking-tighter">Invitation Accompagnateur</h1>
+      
+      <div class="p-6 bg-slate-50 rounded-[32px] text-left space-y-4">
+        <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">Rendez-vous pour :</p>
+        <p class="text-2xl font-black text-slate-800">M. Jean Dupont</p>
+        <div class="h-1 bg-slate-200 w-12 rounded-full"></div>
+        <p class="text-xl font-bold text-slate-600">
+           📍 ZAS Campus Nord<br>
+           👨‍⚕️ Dr. Jan Peeters (Cardiologie)<br>
+           📅 12 Mai 2026 à 10:30
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <p class="text-lg font-bold text-slate-400">Souhaitez-vous confirmer votre présence pour accompagner Jean ?</p>
+        <button onclick="confirmPresence()" id="main-btn" class="btn-primary text-2xl">
+          OUI, JE SERAI PRÉSENT ✅
+        </button>
+      </div>
+    </div>
+
+    <p class="text-slate-300 font-bold uppercase text-[10px] tracking-widest">Sécurisé par ZAS Patient Link</p>
+  </div>
+
+  <script>
+    function confirmPresence() {
+      const btn = document.getElementById('main-btn');
+      btn.innerHTML = "PRÉSENCE CONFIRMÉE ! 🎊";
+      btn.style.background = "#22C55E";
+      btn.disabled = true;
+      
+      // Simulation d'envoi de l'info au patient
+      setTimeout(() => {
+        alert("Jean Dupont a été prévenu de votre présence. Merci !");
+      }, 500);
+    }
+  </script>
+</body>
+</html>

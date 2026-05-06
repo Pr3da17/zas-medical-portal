@@ -1,0 +1,17 @@
+{
+  "name": "ZAS Antwerpen - Patiëntenportaal",
+  "short_name": "ZAS Patient",
+  "description": "Portail de prise de rendez-vous intelligente pour ZAS Antwerpen.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFDFD",
+  "theme_color": "#00A5AD",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063176.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

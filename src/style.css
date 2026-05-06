@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --zas-primary: #00A5AD;
+  --zas-primary-soft: #E0F7F8;
+  --zas-primary-dark: #007A80;
+  --zas-bg: #FDFDFD;
+  --zas-text: #1A2E35;
+  --zas-gray: #F1F5F9;
+  --zas-coral: #FF6B6B;
+}
+
+@layer base {
+  body {
+    @apply bg-[#FDFDFD] text-[#1A2E35] font-sans min-h-screen flex flex-col antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(0, 165, 173, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(0, 165, 173, 0.03) 0px, transparent 50%);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /* Soft & Round Primary Button */
+  .btn-primary {
+    @apply relative bg-hospital-primary text-white rounded-[32px] font-black px-10 py-6 
+           flex items-center justify-center gap-4 shadow-[0_15px_30px_-5px_rgba(0,165,173,0.3)] 
+           hover:shadow-[0_25px_50px_-10px_rgba(0,165,173,0.4)] hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer;
+  }
+
+  /* Elegant Outline Button */
+  .btn-outline {
+    @apply border-4 border-hospital-primary/20 text-hospital-primary bg-white rounded-[32px] font-black px-10 py-6 
+           flex items-center justify-center gap-4 hover:border-hospital-primary hover:bg-hospital-secondary transition-all duration-300 cursor-pointer;
+  }
+
+  /* Soft UI Cards */
+  .card-zas {
+    @apply bg-white rounded-[48px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-10 border border-gray-50
+           transition-all duration-500 hover:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.08)];
+  }
+
+  /* Floating Profile Cards */
+  .profile-option {
+    @apply relative flex flex-col items-center justify-center p-12 rounded-[56px] border-4 border-transparent 
+           bg-white shadow-xl transition-all duration-500 cursor-pointer text-center hover:-translate-y-2;
+  }
+
+  .profile-option:hover {
+    @apply border-hospital-primary shadow-[0_30px_60px_-20px_rgba(0,165,173,0.15)];
+  }
+
+  .profile-option.active {
+    @apply border-hospital-primary bg-hospital-secondary scale-105;
+  }
+
+  /* Progress Indicators */
+  .progress-bar-container {
+    @apply flex items-center justify-center gap-3;
+  }
+  .progress-segment {
+    @apply h-3 rounded-full bg-gray-100 transition-all duration-700;
+  }
+  
+  @keyframes progress-glow {
+    0% { box-shadow: 0 0 5px rgba(0, 165, 173, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(0, 165, 173, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(0, 165, 173, 0.4); }
+  }
+
+  .progress-segment.active {
+    @apply bg-hospital-primary;
+    animation: progress-glow 2s infinite ease-in-out;
+  }
+}
+
+/* Smooth Reveal Animation with Blur */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.98); filter: blur(10px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.reveal {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Guiding Focus (Professional Version) */
+.guiding-focus {
+  @apply ring-[12px] ring-hospital-primary/20 border-hospital-primary scale-105 z-[100] !important;
+  animation: soft-pulse 2s infinite;
+}
+
+@keyframes soft-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 165, 173, 0.4); }
+  70% { transform: scale(1.02); box-shadow: 0 0 0 20px rgba(0, 165, 173, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 165, 173, 0); }
+}
+
+/* Custom Scrollbar (Subtle) */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #FDFDFD; }
+::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; border: 3px solid #FDFDFD; }
+::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
