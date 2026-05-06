@@ -5,12 +5,13 @@ import { getJulienExplanation } from './assistant.js';
 import { api } from './data/api.js';
 import { notificationService } from './data/notifications.js';
 import { botBrain } from './ai/brain.js';
+import { startTutorialForStep } from './tutorial.js';
 
 // --- State ---
 const state = {
   lang: 'fr', mode: 'beginner', step: 'profile', data: { specialties: [], doctors: [], slots: [] },
   selections: { specialtyId: null, specialtyKey: null, doctor: null, date: null, time: null, phone: '', companionEmail: '' },
-  isLoading: false, history: [], chatHistory: [], isBotTyping: false
+  isLoading: false, history: [], chatHistory: [], isBotTyping: false, isSidebarOpen: false, specialtySearchQuery: '', openCategory: null
 };
 
 // --- Utils ---
@@ -26,8 +27,8 @@ function getWeekNumber(d) {
 
 async function updateUI() {
   const app = document.getElementById('app');
-  app.className = `flex flex-col min-h-screen mode-${state.mode}`;
-  app.innerHTML = `${renderHeader()}<main class="flex-grow container mx-auto px-4 py-12 max-w-7xl w-full">${state.isLoading ? renderLoader() : renderStep()}</main>${renderFooter()}${renderZasBot()}`;
+  app.className = `flex flex-col min-h-screen mode-${state.mode} ${state.isSidebarOpen ? 'overflow-hidden' : ''}`;
+  app.innerHTML = `${renderHeader()}${renderSidebar()}<main class="flex-grow container mx-auto px-4 py-12 max-w-7xl w-full">${state.isLoading ? renderLoader() : renderStep()}</main>${renderFooter()}${renderZasBot()}`;
   attachEventListeners();
 }
 
@@ -37,19 +38,84 @@ function renderHeader() {
   if (state.step === 'profile') return '';
   const stepsOrder = ['profile', 'specialty', 'doctor', 'schedule', 'contact', 'verification', 'confirm'];
   const currentIdx = stepsOrder.indexOf(state.step);
+  const isBeginner = state.mode === 'beginner';
+  const tutoBtnClasses = isBeginner 
+    ? "px-8 py-6 rounded-[32px] text-xl bg-slate-100 text-hospital-primary font-black uppercase border-4 border-slate-200 hover:bg-slate-200 transition-all shadow-md"
+    : "px-6 py-4 rounded-[24px] bg-slate-100 text-hospital-primary font-black uppercase text-sm border-2 border-slate-200 hover:bg-slate-200 transition-all";
+
   return `
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-6">
       <div class="container mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-5 cursor-pointer" onclick="location.reload()">
-          <div class="w-16 h-16 bg-hospital-primary rounded-[22px] flex items-center justify-center text-white font-black text-3xl shadow-xl">Z</div>
-          <div class="hidden sm:block"><h1 class="text-2xl font-black text-hospital-primary tracking-tighter leading-none">${t('title').toUpperCase()}</h1><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ZNA Antwerpen</p></div>
+        <div class="flex items-center gap-5">
+          <button id="btn-open-sidebar" class="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-hospital-primary text-3xl border-2 border-slate-100 hover:bg-slate-100 transition-all shadow-sm">☰</button>
+          <div class="flex items-center gap-5 cursor-pointer" onclick="location.reload()">
+            <div class="w-16 h-16 bg-hospital-primary rounded-[22px] flex items-center justify-center text-white font-black text-3xl shadow-xl hidden sm:flex">Z</div>
+            <div class="hidden sm:block"><h1 class="text-2xl font-black text-hospital-primary tracking-tighter leading-none">${t('title').toUpperCase()}</h1><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ZNA Antwerpen</p></div>
+          </div>
         </div>
         <div class="flex items-center gap-8">
           <div class="hidden md:flex items-center gap-3">${stepsOrder.map((s, i) => `<div class="progress-segment ${state.mode === 'beginner' ? 'w-8 h-3' : 'w-12 h-2'} ${i <= currentIdx ? 'active' : ''}"></div>`).join('')}</div>
+          <button id="tuto-btn" class="${tutoBtnClasses}">${t('tuto_btn')}</button>
           <button id="voice-toggle" class="w-16 h-16 rounded-[24px] bg-hospital-secondary text-hospital-primary flex items-center justify-center border-2 border-hospital-primary/10 transition-all"><span class="text-3xl">${voice.enabled ? '🔊' : '🔇'}</span></button>
         </div>
       </div>
     </header>
+  `;
+}
+
+function renderSidebar() {
+  if (!state.isSidebarOpen) return '';
+
+  let links = [];
+  if (state.mode === 'beginner') {
+    links = [
+      { id: 'menu-book', icon: '📅', key: 'menu_book', step: 'specialty', color: 'bg-hospital-primary text-white' },
+      { id: 'menu-contact', icon: '📞', key: 'menu_contact', step: 'contact_page', color: 'bg-zas-coral text-white' }
+    ];
+  } else if (state.mode === 'intermediate') {
+    links = [
+      { id: 'menu-book', icon: '📅', key: 'menu_book', step: 'specialty', color: 'bg-hospital-primary text-white' },
+      { id: 'menu-docs', icon: '📄', key: 'menu_docs', step: 'documents', color: 'bg-white border-4 border-slate-100 text-slate-800' },
+      { id: 'menu-faq', icon: '❓', key: 'menu_faq', step: 'faq', color: 'bg-white border-4 border-slate-100 text-slate-800' },
+      { id: 'menu-contact', icon: '📞', key: 'menu_contact', step: 'contact_page', color: 'bg-white border-4 border-slate-100 text-slate-800' }
+    ];
+  } else {
+    links = [
+      { id: 'menu-book', icon: '📅', key: 'menu_book', step: 'specialty', color: 'bg-hospital-primary text-white' },
+      { id: 'menu-docs', icon: '🗂️', key: 'menu_docs', step: 'documents', color: 'bg-white border-4 border-slate-100 text-slate-800' },
+      { id: 'menu-news', icon: '📰', key: 'menu_news', step: 'news', color: 'bg-white border-4 border-slate-100 text-slate-800' },
+      { id: 'menu-faq', icon: '❓', key: 'menu_faq', step: 'faq', color: 'bg-white border-4 border-slate-100 text-slate-800' },
+      { id: 'menu-contact', icon: '📞', key: 'menu_contact', step: 'contact_page', color: 'bg-white border-4 border-slate-100 text-slate-800' }
+    ];
+  }
+
+  return `
+    <div class="fixed inset-0 z-[100] flex">
+      <div id="sidebar-overlay" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
+      <div class="relative w-4/5 max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-left">
+        <div class="p-8 border-b-4 border-slate-50 flex justify-between items-center">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-hospital-primary rounded-[18px] flex items-center justify-center text-white font-black text-2xl shadow-xl">Z</div>
+            <span class="font-black text-2xl tracking-tighter text-slate-800">MENU</span>
+          </div>
+          <button id="btn-close-sidebar" class="w-14 h-14 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center text-2xl hover:text-zas-coral transition-colors font-black">✕</button>
+        </div>
+        <div class="p-8 flex-grow overflow-y-auto space-y-6">
+          ${links.map(l => `
+            <button class="sidebar-link w-full text-left flex items-center gap-8 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${l.color}" data-step="${l.step}">
+              <span class="text-5xl">${l.icon}</span>
+              <span class="font-black text-2xl tracking-tighter uppercase">${t(l.key)}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="p-8 bg-slate-50 border-t-4 border-slate-100">
+           <div class="flex items-center gap-4 text-slate-500 font-bold uppercase text-xs tracking-widest">
+             <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+             Système ZAS Connecté
+           </div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -94,13 +160,31 @@ function renderStep() {
     case 'verification': return renderSmsVerification();
     case 'confirm': return renderConfirmation();
     case 'success': return renderSuccess();
+    case 'faq': return renderPlaceholder('FAQ', 'Questions fréquentes');
+    case 'documents': return renderPlaceholder('Documents', 'Vos résultats médicaux');
+    case 'news': return renderPlaceholder('Nouveautés', 'Actualités de l\'hôpital');
+    case 'contact_page': return renderPlaceholder('Contact', 'Nous joindre');
     default: return 'Error';
   }
 }
 
+function renderPlaceholder(title, subtitle) {
+  return `
+    <div class="max-w-4xl mx-auto text-center space-y-12 py-20 reveal">
+      <div class="text-[120px] leading-none mb-8 animate-bounce">🚧</div>
+      <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${title}</h1>
+      <p class="text-3xl text-slate-400 font-bold">${subtitle}</p>
+      <div class="p-12 bg-white rounded-[40px] border-8 border-slate-50 shadow-xl mt-12 max-w-2xl mx-auto">
+        <p class="text-2xl text-slate-400 font-black uppercase tracking-widest">Cette fonctionnalité est en cours de développement.</p>
+      </div>
+    </div>
+  `;
+}
+
 function renderProfileSelection() {
   return `
-    <div class="max-w-6xl mx-auto space-y-20 py-12 reveal">
+    <div class="max-w-6xl mx-auto space-y-20 py-12 reveal relative">
+      <button id="tuto-btn-profile" class="absolute top-0 right-4 md:right-0 px-10 py-6 rounded-[32px] text-xl bg-white text-hospital-primary font-black uppercase border-4 border-slate-100 hover:bg-slate-50 transition-all shadow-lg hover:scale-105">${t('tuto_btn')}</button>
       <div class="text-center space-y-8">
         <div class="flex justify-center mb-8"><div class="w-24 h-24 bg-hospital-primary text-white rounded-[28px] flex items-center justify-center font-black text-5xl shadow-2xl">Z</div></div>
         <h1 class="text-5xl md:text-8xl font-black text-hospital-primary tracking-tighter leading-none uppercase">${t('title')}</h1>
@@ -123,11 +207,47 @@ function renderProfileSelection() {
 
 function renderSpecialtySelection() {
   const isBeginner = state.mode === 'beginner';
+  
+  // Group by category
+  const categories = {};
+  state.data.specialties.forEach(s => {
+    if (!categories[s.category]) categories[s.category] = [];
+    categories[s.category].push(s);
+  });
+
   return `
-    <div class="space-y-16 reveal">
-      <div class="text-center space-y-4"><h1 class="${isBeginner ? 'text-7xl' : 'text-5xl'} font-black text-hospital-primary uppercase tracking-tighter">${t('select_specialty')}</h1></div>
-      <div class="${isBeginner ? 'flex flex-col gap-10 max-w-2xl mx-auto' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}">
-        ${state.data.specialties.map((s, i) => `<button id="spec-${s.id}" class="specialty-btn card-zas group flex items-center justify-between hover:bg-hospital-secondary transition-all" data-id="${s.id}" data-key="${s.key}"><div class="flex items-center gap-8"><span class="text-7xl group-hover:scale-110 transition-transform">${s.icon}</span><div class="text-left"><div class="font-black text-3xl uppercase tracking-tighter text-slate-800">${t(s.key)}</div><div class="text-xs font-black text-hospital-accent uppercase tracking-widest mt-1">${t(s.key + '_desc')}</div></div></div></button>`).join('')}
+    <div class="space-y-16 reveal max-w-5xl mx-auto">
+      <div class="text-center space-y-4">
+        <h1 class="${isBeginner ? 'text-7xl' : 'text-5xl'} font-black text-hospital-primary uppercase tracking-tighter">${t('select_specialty')}</h1>
+      </div>
+      
+      <div class="relative max-w-2xl mx-auto">
+        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-3xl">🔍</span>
+        <input type="text" id="specialty-search" placeholder="Rechercher une spécialité..." 
+               class="w-full pl-20 pr-8 py-6 rounded-[32px] bg-white border-4 border-slate-100 text-2xl font-black text-slate-800 shadow-sm focus:border-hospital-primary outline-none transition-all">
+      </div>
+
+      <div class="space-y-6" id="categories-list">
+        ${Object.keys(categories).map(catKey => {
+          return `
+            <div class="category-container bg-white rounded-[32px] border-4 border-slate-100 shadow-sm overflow-hidden transition-all duration-300" data-catkey="${catKey}">
+              <button class="category-toggle w-full flex items-center justify-between p-8 hover:bg-slate-50 transition-colors">
+                <div class="font-black text-3xl text-slate-800 tracking-tighter">${t(catKey)}</div>
+                <div class="category-icon text-4xl text-hospital-primary transform transition-transform duration-300">▼</div>
+              </button>
+              <div class="category-content hidden p-8 bg-slate-50 border-t-4 border-slate-100">
+                <div class="${isBeginner ? 'flex flex-col gap-6' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}">
+                  ${categories[catKey].map(s => `
+                    <button class="specialty-btn w-full text-left p-6 rounded-[24px] border-4 border-white bg-white hover:border-hospital-primary hover:bg-hospital-secondary transition-all group flex items-center justify-between shadow-sm" data-id="${s.id}" data-key="${s.key}">
+                      <span class="font-black text-xl text-slate-700 group-hover:text-hospital-primary transition-colors">${t(s.key)}</span>
+                      <span class="opacity-0 group-hover:opacity-100 transition-opacity text-2xl font-black text-hospital-primary">→</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;
@@ -237,6 +357,86 @@ function attachEventListeners() {
   const btnRestart = document.getElementById('btn-restart'); if (btnRestart) btnRestart.onclick = () => location.reload();
   const julienBtn = document.getElementById('julien-btn'); if (julienBtn) { julienBtn.onclick = () => { document.getElementById('julien-window').classList.toggle('hidden'); }; }
   const chatSend = document.getElementById('chat-send'); if (chatSend) { chatSend.onclick = async () => { const input = document.getElementById('chat-input'); const text = input.value.trim(); if (!text) return; addBotMessage(text, 'user'); input.value = ''; const typing = document.getElementById('bot-typing'); typing?.classList.remove('hidden'); const response = await botBrain.process(text, state.step, state.lang); typing?.classList.add('hidden'); addBotMessage(response.text, 'bot'); if (response.action === 'highlight') highlightElement(`#${response.targetId}`); }; }
+  const tutoBtn = document.getElementById('tuto-btn'); if (tutoBtn) tutoBtn.onclick = () => startTutorialForStep(state.step, state.lang);
+  const tutoBtnProfile = document.getElementById('tuto-btn-profile'); if (tutoBtnProfile) tutoBtnProfile.onclick = () => startTutorialForStep('profile', state.lang);
+  
+  const btnOpenSidebar = document.getElementById('btn-open-sidebar'); if (btnOpenSidebar) btnOpenSidebar.onclick = () => { state.isSidebarOpen = true; updateUI(); };
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar'); if (btnCloseSidebar) btnCloseSidebar.onclick = () => { state.isSidebarOpen = false; updateUI(); };
+  const sidebarOverlay = document.getElementById('sidebar-overlay'); if (sidebarOverlay) sidebarOverlay.onclick = () => { state.isSidebarOpen = false; updateUI(); };
+  
+  document.querySelectorAll('.sidebar-link').forEach(btn => { 
+    btn.onclick = () => { 
+      state.isSidebarOpen = false; 
+      navigateTo(btn.dataset.step); 
+    }; 
+  });
+  
+  const searchInput = document.getElementById('specialty-search');
+  if (searchInput) {
+    searchInput.oninput = (e) => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('.category-container').forEach(catDiv => {
+        const catKey = catDiv.dataset.catkey;
+        const catTitleStr = t(catKey).toLowerCase();
+        let hasVisibleSpecialty = false;
+        
+        catDiv.querySelectorAll('.specialty-btn').forEach(btn => {
+          const specStr = t(btn.dataset.key).toLowerCase();
+          if (specStr.includes(query) || catTitleStr.includes(query)) {
+            btn.style.display = '';
+            hasVisibleSpecialty = true;
+          } else {
+            btn.style.display = 'none';
+          }
+        });
+        
+        const contentDiv = catDiv.querySelector('.category-content');
+        const iconDiv = catDiv.querySelector('.category-icon');
+        
+        if (hasVisibleSpecialty) {
+          catDiv.style.display = '';
+          if (query.length > 0) {
+            contentDiv.classList.remove('hidden');
+            contentDiv.classList.add('block');
+            iconDiv.classList.add('rotate-180');
+            catDiv.classList.add('border-hospital-primary', 'shadow-xl');
+            catDiv.classList.remove('border-slate-100', 'shadow-sm');
+          } else {
+            contentDiv.classList.add('hidden');
+            contentDiv.classList.remove('block');
+            iconDiv.classList.remove('rotate-180');
+            catDiv.classList.remove('border-hospital-primary', 'shadow-xl');
+            catDiv.classList.add('border-slate-100', 'shadow-sm');
+          }
+        } else {
+          catDiv.style.display = 'none';
+        }
+      });
+    };
+  }
+
+  document.querySelectorAll('.category-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const catDiv = btn.closest('.category-container');
+      const contentDiv = catDiv.querySelector('.category-content');
+      const iconDiv = catDiv.querySelector('.category-icon');
+      const isHidden = contentDiv.classList.contains('hidden');
+      
+      if (isHidden) {
+        contentDiv.classList.remove('hidden');
+        contentDiv.classList.add('block');
+        iconDiv.classList.add('rotate-180');
+        catDiv.classList.add('border-hospital-primary', 'shadow-xl');
+        catDiv.classList.remove('border-slate-100', 'shadow-sm');
+      } else {
+        contentDiv.classList.add('hidden');
+        contentDiv.classList.remove('block');
+        iconDiv.classList.remove('rotate-180');
+        catDiv.classList.remove('border-hospital-primary', 'shadow-xl');
+        catDiv.classList.add('border-slate-100', 'shadow-sm');
+      }
+    };
+  });
 }
 
 function addBotMessage(text, type) {
@@ -250,3 +450,8 @@ function addBotMessage(text, type) {
   }
 }
 updateUI();
+
+if (!localStorage.getItem('zas_tutorial_completed')) {
+  localStorage.setItem('zas_tutorial_completed', 'true');
+  setTimeout(() => startTutorialForStep('profile', state.lang), 500);
+}

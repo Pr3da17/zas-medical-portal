@@ -19,10 +19,16 @@ export const api = {
   async getDoctorsBySpecialty(specialtyId) {
     return new Promise(resolve => {
       setTimeout(() => {
-        // Filtrage précis par identifiant technique
-        const filtered = db.doctors.filter(d => d.specialtyId === specialtyId);
+        let filtered = db.doctors.filter(d => d.specialtyId === specialtyId);
+        // Fallback: si aucun médecin n'est trouvé pour cette spécialité, on crée des médecins fictifs pour la démo
+        if (filtered.length === 0) {
+          filtered = [
+            { id: 901, name: 'Dr. Anna Peeters', specialtyId: specialtyId, hospitalId: 'nord', image: 'https://i.pravatar.cc/150?u=zas11' },
+            { id: 902, name: 'Dr. Marc Dubois', specialtyId: specialtyId, hospitalId: 'cadix', image: 'https://i.pravatar.cc/150?u=zas12' }
+          ];
+        }
         resolve(filtered);
-      }, 1000);
+      }, 800);
     });
   },
 
