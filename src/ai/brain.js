@@ -63,6 +63,33 @@ const STEP_BY_REQUEST = {
   contact: "contact"
 };
 
+const FAQ_TOPICS = {
+  location: {
+    step: "contact_page",
+    keywords: ["cadix", "address", "adres", "location", "where", "waar", "ou", "route", "campus"]
+  },
+  bring: {
+    step: "documents",
+    keywords: ["bring", "meebrengen", "meenemen", "apporter", "need to bring", "what do i need", "documents", "documenten", "id card", "identiteitskaart"]
+  },
+  change: {
+    step: "faq",
+    keywords: ["change", "edit", "modify", "reschedule", "wijzigen", "aanpassen", "modifier", "deplacer"]
+  },
+  cancel: {
+    step: "faq",
+    keywords: ["cancel", "annuleren", "annuler", "delete appointment", "remove appointment"]
+  },
+  verification: {
+    step: "contact",
+    keywords: ["verification", "verify", "code", "sms", "email verification", "verification email", "verificatie", "verifier"]
+  },
+  hours: {
+    step: "contact_page",
+    keywords: ["hours", "opening", "open", "opening hours", "openingstijden", "uren", "heures", "when can i call"]
+  }
+};
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -102,6 +129,10 @@ function detectIntent(query) {
   return null;
 }
 
+function detectFaqTopic(query) {
+  return Object.entries(FAQ_TOPICS).find(([, config]) => includesAny(query, config.keywords))?.[0] || null;
+}
+
 function detectSpecialty(query) {
   return Object.entries(SPECIALTIES).find(([, config]) => includesAny(query, config.keywords))?.[0] || null;
 }
@@ -116,10 +147,56 @@ function responseByLang(lang, options) {
   return options[lang] || options.en;
 }
 
+function faqResponse(topic, lang) {
+  const responses = {
+    location: responseByLang(lang, {
+      fr: "ZAS Cadix se trouve a Kattendijkdok-Oostkaai 21, 2000 Anvers. Je vous montre aussi la page Contact avec les coordonnees principales.",
+      nl: "ZAS Cadix bevindt zich op Kattendijkdok-Oostkaai 21, 2000 Antwerpen. Ik toon u ook meteen de contactpagina met de belangrijkste gegevens.",
+      en: "ZAS Cadix is located at Kattendijkdok-Oostkaai 21, 2000 Antwerp. I will also show you the contact page with the key details."
+    }),
+    bring: responseByLang(lang, {
+      fr: "Pour votre rendez-vous, prevoyez surtout votre carte d'identite, votre confirmation et tout document medical utile. Je vous montre la page Documents pour retrouver l'essentiel.",
+      nl: "Breng voor uw afspraak vooral uw identiteitskaart, uw bevestiging en relevante medische documenten mee. Ik toon u de pagina Documenten met de belangrijkste info.",
+      en: "For your appointment, please bring your ID card, your confirmation, and any relevant medical documents. I will show you the Documents page with the most useful information."
+    }),
+    change: responseByLang(lang, {
+      fr: "Oui, vous pouvez modifier un rendez-vous depuis l'accueil via le bouton Modifier. Je vous montre aussi la FAQ ou cela est explique clairement.",
+      nl: "Ja, u kunt een afspraak wijzigen vanaf de startpagina via de knop Wijzigen. Ik toon u ook de FAQ waar dit duidelijk uitgelegd staat.",
+      en: "Yes, you can change an appointment from the home screen with the Edit button. I will also show you the FAQ where this is explained clearly."
+    }),
+    cancel: responseByLang(lang, {
+      fr: "Oui, vous pouvez annuler un rendez-vous depuis l'accueil avec le bouton Annuler. Je vous dirige aussi vers la FAQ pour cette information.",
+      nl: "Ja, u kunt een afspraak annuleren vanaf de startpagina met de knop Annuleren. Ik stuur u ook naar de FAQ voor deze uitleg.",
+      en: "Yes, you can cancel an appointment from the home screen with the Cancel button. I will also take you to the FAQ for this information."
+    }),
+    verification: responseByLang(lang, {
+      fr: "Vous pouvez maintenant verifier par telephone ou par e-mail. Sur l'etape Contact, vous choisissez la methode qui vous convient.",
+      nl: "U kunt nu verifieren via telefoon of via e-mail. In de stap Contact kiest u de methode die voor u het best werkt.",
+      en: "You can now verify by phone or by email. In the Contact step, you can choose the method that works best for you."
+    }),
+    hours: responseByLang(lang, {
+      fr: "Le support de ZAS Cadix est disponible du lundi au vendredi de 08:00 a 18:00. Je vous montre aussi la page Contact.",
+      nl: "De ondersteuning van ZAS Cadix is beschikbaar van maandag tot vrijdag van 08:00 tot 18:00. Ik toon u ook meteen de contactpagina.",
+      en: "ZAS Cadix support is available from Monday to Friday, 08:00 to 18:00. I will also show you the Contact page."
+    })
+  };
+
+  return responses[topic];
+}
+
 export const botBrain = {
   async process(input, currentStep, lang) {
     const query = input.toLowerCase();
     await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const faqTopic = detectFaqTopic(query);
+    if (faqTopic) {
+      return {
+        text: faqResponse(faqTopic, lang),
+        action: "navigate",
+        targetStep: FAQ_TOPICS[faqTopic].step
+      };
+    }
 
     const intent = detectIntent(query);
     if (intent && STEP_BY_REQUEST[intent]) {
@@ -173,14 +250,14 @@ export const botBrain = {
           en: "Select an available time slot in the schedule."
         }),
         contact: responseByLang(lang, {
-          fr: "Entrez votre numero de telephone pour recevoir le code de verification.",
-          nl: "Vul uw telefoonnummer in om een verificatiecode te ontvangen.",
-          en: "Enter your phone number to receive the verification code."
+          fr: "Entrez votre numero de telephone ou votre adresse e-mail pour recevoir le code de verification.",
+          nl: "Vul uw telefoonnummer of e-mailadres in om een verificatiecode te ontvangen.",
+          en: "Enter your phone number or email address to receive the verification code."
         }),
         verification: responseByLang(lang, {
-          fr: "Saisissez le code recu par SMS pour confirmer.",
-          nl: "Vul de code uit de sms in om te bevestigen.",
-          en: "Enter the code from the SMS to confirm."
+          fr: "Saisissez le code recu par SMS ou par e-mail pour confirmer.",
+          nl: "Vul de code uit de sms of e-mail in om te bevestigen.",
+          en: "Enter the code from the SMS or email to confirm."
         }),
         confirm: responseByLang(lang, {
           fr: "Verifiez le recapitulatif puis confirmez le rendez-vous.",
