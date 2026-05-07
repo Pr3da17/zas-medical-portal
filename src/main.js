@@ -24,6 +24,7 @@ const state = {
     companionEmail: "",
     cardioAnswers: {}
   },
+  driver: null,
   isLoading: false,
   history: [],
   chatHistory: [],
@@ -139,46 +140,48 @@ function renderLoader() {
 function renderHeader() {
   if (state.step === "profile") return "";
 
-  const currentIdx = stepsOrder.indexOf(state.step);
   const isBeginner = state.mode === "beginner";
-  const tutorialClasses = isBeginner
-    ? "px-8 py-6 rounded-[32px] text-xl bg-slate-100 text-hospital-primary font-black uppercase border-4 border-slate-200 hover:bg-slate-200 transition-all shadow-md"
-    : "px-6 py-4 rounded-[24px] bg-slate-100 text-hospital-primary font-black uppercase text-sm border-2 border-slate-200 hover:bg-slate-200 transition-all";
+  const headerBtnClass = isBeginner
+    ? "px-6 py-4 rounded-[28px] font-black uppercase text-lg border-4 transition-all shadow-lg flex items-center justify-center gap-3 h-[72px] min-w-[180px]"
+    : "px-4 py-3 rounded-[20px] font-black uppercase text-xs border-2 transition-all shadow-md flex items-center justify-center gap-2 h-[52px] min-w-[130px]";
 
   const currentProgressIndex = progressSteps.findIndex((step) => step.key === state.step);
 
   return `
-    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-6">
-      <div class="container mx-auto flex flex-col gap-5">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-4 py-4">
+      <div class="container mx-auto flex flex-col gap-3">
         <div class="flex items-center justify-between">
-        <div class="flex items-center gap-5">
-          <button id="btn-open-sidebar" class="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-hospital-primary text-3xl border-2 border-slate-100 hover:bg-slate-100 transition-all shadow-sm">☰</button>
-          <div class="flex items-center gap-5 cursor-pointer" id="logo-home">
-            <div class="w-16 h-16 bg-hospital-primary rounded-[22px] flex items-center justify-center text-white font-black text-3xl shadow-xl hidden sm:flex">Z</div>
+        <div class="flex items-center gap-4">
+          <button id="btn-open-sidebar" class="${isBeginner ? 'w-16 h-[72px] rounded-[28px] text-3xl' : 'w-12 h-[52px] rounded-[18px] text-2xl'} bg-slate-50 flex items-center justify-center text-hospital-primary border-2 border-slate-100 hover:bg-slate-100 transition-all shadow-sm">☰</button>
+          <div class="flex items-center gap-4 cursor-pointer" id="logo-home">
+            <div class="${isBeginner ? 'w-16 h-[72px] rounded-[28px] text-3xl' : 'w-12 h-[52px] rounded-[18px] text-2xl'} bg-hospital-primary flex items-center justify-center text-white font-black shadow-xl hidden sm:flex">Z</div>
             <div class="hidden sm:block">
-              <h1 class="text-2xl font-black text-hospital-primary tracking-tighter leading-none">${t("title").toUpperCase()}</h1>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ZAS Cadix</p>
+              <h1 class="${isBeginner ? 'text-2xl' : 'text-xl'} font-black text-hospital-primary tracking-tighter leading-none">${t("title").toUpperCase()}</h1>
+              <p class="${isBeginner ? 'text-[10px]' : 'text-[8px]'} font-black text-slate-400 uppercase tracking-widest mt-1">ZAS Cadix</p>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-4 md:gap-8">
-          <button id="tuto-btn" class="${tutorialClasses}">${t("tuto_btn")}</button>
-          <button id="reader-toggle" title="${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${state.readerEnabled ? "bg-zas-coral text-white border-zas-coral" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}">
+        <div class="flex items-center gap-2 md:gap-3">
+          <button id="tuto-btn" class="${headerBtnClass} bg-white text-hospital-primary border-slate-100 hover:bg-slate-50">
+            <span class="text-2xl">💡</span>
+            <span class="hidden lg:inline whitespace-nowrap">${t("tuto_btn")}</span>
+          </button>
+          <button id="reader-toggle" title="${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}" class="${headerBtnClass} ${state.readerEnabled ? "bg-zas-coral text-white border-zas-coral" : "bg-white text-slate-700 border-slate-100 hover:bg-slate-50"}">
             <span class="text-2xl">${state.readerEnabled ? "🔊" : "🔈"}</span>
-            <span class="hidden xl:inline whitespace-nowrap">${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}</span>
+            <span class="hidden lg:inline whitespace-nowrap">${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}</span>
           </button>
-          <button id="dyslexic-toggle" title="${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${state.dyslexicMode ? "bg-hospital-primary text-white border-hospital-primary" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}">
+          <button id="dyslexic-toggle" title="${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}" class="${headerBtnClass} ${state.dyslexicMode ? "bg-hospital-primary text-white border-hospital-primary" : "bg-white text-slate-700 border-slate-100 hover:bg-slate-50"}">
             <span class="text-2xl">👓</span>
-            <span class="hidden xl:inline whitespace-nowrap">${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}</span>
+            <span class="hidden lg:inline whitespace-nowrap">${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}</span>
           </button>
-          <button id="voice-toggle" title="${voice.isListening ? t("voice_stop") : t("voice_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${voice.isListening ? "bg-hospital-primary text-white border-hospital-primary" : "bg-hospital-secondary text-hospital-primary border-hospital-primary/10 hover:bg-hospital-primary/20"}">
+          <button id="voice-toggle" title="${voice.isListening ? t("voice_stop") : t("voice_start")}" class="${headerBtnClass} ${voice.isListening ? "bg-hospital-primary text-white border-hospital-primary" : "bg-hospital-secondary text-hospital-primary border-hospital-primary/10 hover:bg-hospital-primary/20"}">
             <span class="text-2xl">${voice.isListening ? "🎙️" : "🎤"}</span>
-            <span class="hidden xl:inline whitespace-nowrap">${voice.isListening ? t("voice_stop") : t("voice_start")}</span>
+            <span class="hidden lg:inline whitespace-nowrap">${voice.isListening ? t("voice_stop") : t("voice_start")}</span>
           </button>
         </div>
       </div>
       ${currentProgressIndex >= 0 ? `
-        <div class="rounded-[28px] border-2 border-slate-100 bg-white/90 px-5 py-4 shadow-sm">
+        <div id="progress-bar-container" class="rounded-[28px] border-2 border-slate-100 bg-white/90 px-5 py-4 shadow-sm">
           <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <div class="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">${t("progress_title")}</div>
@@ -200,15 +203,21 @@ function renderHeader() {
 function renderSidebar() {
   if (!state.isSidebarOpen) return "";
 
+  const isBeginner = state.mode === "beginner";
   const links = [
     { icon: "📅", key: "menu_book", step: "specialty", color: "bg-hospital-primary text-white" },
+    { icon: "🩺", key: "menu_teleconsultation", step: "teleconsultation", color: "bg-white border-4 border-slate-100 text-slate-800", expertOnly: true },
+    { icon: "💬", key: "menu_messaging", step: "messaging", color: "bg-white border-4 border-slate-100 text-slate-800", expertOnly: true },
+    { icon: "📂", key: "menu_dossier", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800", expertOnly: true },
     { icon: "📄", key: "menu_docs", step: "documents", color: "bg-white border-4 border-slate-100 text-slate-800" },
     { icon: "❓", key: "menu_faq", step: "faq", color: "bg-white border-4 border-slate-100 text-slate-800" },
-    { icon: "📞", key: "menu_contact", step: "contact_page", color: state.mode === "beginner" ? "bg-zas-coral text-white" : "bg-white border-4 border-slate-100 text-slate-800" }
+    { icon: "📞", key: "menu_contact", step: "contact_page", color: isBeginner ? "bg-zas-coral text-white" : "bg-white border-4 border-slate-100 text-slate-800" }
   ];
 
+  const filteredLinks = links.filter(link => !link.expertOnly || !isBeginner);
+
   return `
-    <div class="fixed inset-0 z-[100] flex">
+    <div class="fixed inset-0 z-[100] flex ${state.lang === 'ar' ? 'flex-row-reverse' : ''}">
       <div id="sidebar-overlay" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
       <div class="relative w-4/5 max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-left">
         <div class="p-8 border-b-4 border-slate-50 flex justify-between items-center">
@@ -219,10 +228,11 @@ function renderSidebar() {
           <button id="btn-close-sidebar" class="w-14 h-14 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center text-2xl hover:text-zas-coral transition-colors font-black">✕</button>
         </div>
         <div class="p-8 flex-grow overflow-y-auto space-y-6">
-          ${links.map((link) => `
+          ${filteredLinks.map((link) => `
             <button class="sidebar-link w-full text-left flex items-center gap-8 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${link.color}" data-step="${link.step}">
               <span class="text-4xl shrink-0">${link.icon}</span>
               <span class="flex-1 min-w-0 font-black text-2xl tracking-tighter uppercase ${link.color.includes("text-white") ? "text-white" : "text-slate-800"}">${t(link.key)}</span>
+
             </button>
           `).join("")}
         </div>
@@ -239,12 +249,17 @@ function renderSidebar() {
 
 function renderFooter() {
   if (state.step === "profile" || state.step === "success") return "";
+  const isBeginner = state.mode === "beginner";
   return `
-    <footer class="bg-white border-t border-gray-100 p-8 mt-auto sticky bottom-0 z-40">
-      <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
-        <button id="btn-back" class="btn-outline min-w-[220px] text-2xl py-6 px-10 rounded-[32px]">⬅️ ${t("back")}</button>
-        <button id="btn-undo" class="${state.mode === "beginner" ? "flex" : "hidden"} btn-outline border-zas-coral text-zas-coral bg-red-50 py-6 px-10 rounded-[32px] text-2xl">↩️ ${t("undo")}</button>
-        <div class="text-slate-500 font-black uppercase text-base md:text-lg tracking-[0.18em] flex items-center gap-4 text-center"><span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>${t("help_fallback")}</div>
+    <footer class="bg-white border-t-4 border-slate-50 p-6 md:p-10 mt-auto sticky bottom-0 z-40 shadow-[0_-20px_50px_rgba(0,0,0,0.05)]">
+      <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <button id="btn-back" class="btn-outline min-w-[240px] text-2xl py-6 px-10 rounded-[32px] border-4">⬅️ ${t("back")}</button>
+        <div class="flex flex-col items-center md:items-end gap-2">
+          <span class="text-slate-400 font-black uppercase text-xs tracking-[0.2em]">${t("help_fallback").split(':')[0]}</span>
+          <a href="tel:032177111" class="${isBeginner ? 'bg-zas-coral text-white px-10 py-5 rounded-[24px] shadow-lg animate-pulse' : 'text-hospital-primary'} font-black text-3xl tracking-tighter transition-all hover:scale-105 flex items-center gap-4">
+            <span class="text-4xl">📞</span> 03 217 71 11
+          </a>
+        </div>
       </div>
     </footer>
   `;
@@ -253,7 +268,7 @@ function renderFooter() {
 function renderZasBot() {
   if (state.step === "profile") return "";
   return `
-    <div class="fixed bottom-10 right-10 z-50 flex flex-col items-end">
+    <div class="fixed bottom-32 right-10 z-50 flex flex-col items-end">
       <div id="julien-window" class="hidden card-zas w-80 md:w-96 mb-6 border-4 border-hospital-primary shadow-2xl overflow-hidden flex flex-col max-h-[500px]">
         <div class="bg-hospital-primary p-4 flex items-center gap-4 text-white">
           <span class="text-3xl">🤖</span>
@@ -274,14 +289,20 @@ function renderZasBot() {
   `;
 }
 
-function renderPlaceholder(titleKey, subtitleKey) {
+function renderPlaceholder(titleKey, subtitleKey, icon = "🚀") {
   return `
-    <div class="max-w-4xl mx-auto text-center space-y-12 py-20 reveal">
-      <div class="text-[120px] leading-none mb-8 animate-bounce">🚧</div>
-      <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${t(titleKey)}</h1>
-      <p class="text-3xl text-slate-400 font-bold">${t(subtitleKey)}</p>
-      <div class="p-12 bg-white rounded-[40px] border-8 border-slate-50 shadow-xl mt-12 max-w-2xl mx-auto">
-        <p class="text-2xl text-slate-400 font-black uppercase tracking-widest">${t("feature_in_progress")}</p>
+    <div class="text-center space-y-12 py-20 reveal max-w-2xl mx-auto">
+      <div class="w-40 h-40 bg-slate-50 rounded-[50px] flex items-center justify-center text-7xl mx-auto shadow-inner border-8 border-slate-100 animate-pulse">
+        ${icon}
+      </div>
+      <div class="space-y-6">
+        <h1 class="text-6xl font-black text-slate-800 uppercase tracking-tighter">${t(titleKey)}</h1>
+        <p class="text-2xl font-bold text-slate-400 max-w-lg mx-auto">${t(subtitleKey)}</p>
+      </div>
+      <div class="pt-10">
+        <button onclick="navigateTo('profile')" class="btn-outline px-16 py-8 text-2xl font-black uppercase tracking-widest border-[6px] rounded-[32px] shadow-xl hover:bg-slate-50 transition-all">
+          ${t("home")} 🏠
+        </button>
       </div>
     </div>
   `;
@@ -485,8 +506,8 @@ function renderProfileSelection() {
       <div class="text-center">
         <p class="text-2xl text-slate-400 font-bold max-w-2xl mx-auto mb-8">${t("profiling_question")}</p>
       </div>
-      <div class="flex justify-center gap-4">
-        ${["fr", "nl", "en"].map((lang) => `<button class="lang-btn px-10 py-5 rounded-[24px] border-4 font-black text-xl transition-all ${state.lang === lang ? "bg-hospital-primary text-white border-hospital-primary shadow-xl" : "bg-white text-slate-300 border-gray-100"}" data-lang="${lang}">${lang.toUpperCase()}</button>`).join("")}
+      <div class="flex flex-wrap justify-center gap-4">
+        ${["fr", "nl", "en", "ar"].map((lang) => `<button class="lang-btn px-8 py-4 rounded-[20px] border-4 font-black text-lg transition-all ${state.lang === lang ? "bg-hospital-primary text-white border-hospital-primary shadow-xl" : "bg-white text-slate-300 border-gray-100"}" data-lang="${lang}">${lang.toUpperCase()}</button>`).join("")}
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10 px-4 max-w-4xl mx-auto">
         ${["beginner", "intermediate"].map((mode, index) => `
@@ -639,6 +660,14 @@ function renderContactInfo() {
             <button type="button" class="verification-method-btn rounded-[28px] border-4 px-6 py-6 text-left font-black text-xl transition-all ${state.selections.verificationMethod === "phone" ? "border-hospital-primary bg-hospital-secondary text-hospital-primary shadow-md" : "border-slate-100 bg-white text-slate-500"}" data-method="phone">${t("verify_by_phone")}</button>
             <button type="button" class="verification-method-btn rounded-[28px] border-4 px-6 py-6 text-left font-black text-xl transition-all ${state.selections.verificationMethod === "email" ? "border-hospital-primary bg-hospital-secondary text-hospital-primary shadow-md" : "border-slate-100 bg-white text-slate-500"}" data-method="email">${t("verify_by_email")}</button>
           </div>
+          ${state.mode !== 'beginner' ? `
+            <div class="mt-4">
+              <button type="button" class="w-full rounded-[28px] border-4 border-[#004A99] bg-[#F5F9FF] text-[#004A99] px-6 py-6 flex items-center justify-center gap-4 font-black text-xl shadow-sm hover:bg-[#004A99] hover:text-white transition-all">
+                <span class="w-10 h-10 bg-[#004A99] text-white rounded-lg flex items-center justify-center text-xs">i</span>
+                ${t("verify_by_itsme")}
+              </button>
+            </div>
+          ` : ''}
         </div>
         <div class="space-y-6">
           <label class="block font-black text-2xl text-slate-400 uppercase tracking-tighter">${state.selections.verificationMethod === "phone" ? t("phone") : t("email")}</label>
@@ -791,7 +820,49 @@ function renderSuccess() {
     <div class="text-center space-y-20 py-20 reveal max-w-4xl mx-auto">
       <div class="text-[180px] leading-none animate-bounce">🎉</div>
       <h1 class="text-7xl font-black text-hospital-primary uppercase tracking-tighter leading-none">${t("success")}</h1>
-      <button id="btn-restart" class="btn-outline mx-auto text-4xl px-20 py-10 border-[8px] rounded-[48px] shadow-2xl">${t("home").toUpperCase()} 🏠</button>
+      <div class="flex flex-col gap-6 items-center">
+        <button id="btn-show-checklist" class="btn-primary px-16 py-8 text-2xl font-black uppercase tracking-widest rounded-[32px] shadow-2xl animate-pulse">
+          📋 ${t("preparation_checklist")}
+        </button>
+        <button id="btn-restart" class="btn-outline mx-auto text-4xl px-20 py-10 border-[8px] rounded-[48px] shadow-2xl">${t("home").toUpperCase()} 🏠</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderChecklist() {
+  const items = [
+    { key: "id_card", icon: "🪪" },
+    { key: "referral_letter", icon: "✉️" },
+    { key: "medication_list", icon: "💊" },
+    { key: "arrival_time", icon: "⏰" }
+  ];
+
+  return `
+    <div class="space-y-16 reveal max-w-3xl mx-auto">
+      <div class="text-center space-y-6">
+        <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${t("preparation_checklist")}</h1>
+        <p class="text-2xl font-bold text-slate-400">${t("preparation_desc")}</p>
+      </div>
+      <div class="grid grid-cols-1 gap-6">
+        ${items.map(item => `
+          <div class="card-zas flex items-center gap-8 p-8 border-4 border-slate-50 hover:border-hospital-primary transition-all group">
+            <div class="w-20 h-20 bg-slate-50 rounded-[28px] flex items-center justify-center text-4xl group-hover:bg-hospital-secondary transition-colors">
+              ${item.icon}
+            </div>
+            <div class="flex-grow">
+              <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Etape ${items.indexOf(item) + 1}</h3>
+              <p class="text-xl font-bold text-slate-400">Préparez vos documents</p>
+            </div>
+            <div class="w-12 h-12 rounded-full border-4 border-slate-100 flex items-center justify-center text-hospital-primary font-black text-2xl">
+              ✓
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button id="btn-restart" class="btn-primary w-full text-3xl py-8 uppercase tracking-widest font-black rounded-[32px] shadow-xl">
+        ${t("home")} 🏠
+      </button>
     </div>
   `;
 }
@@ -826,6 +897,12 @@ function renderStep() {
       return renderPlaceholder("page_news_title", "page_news_subtitle");
     case "contact_page":
       return renderContactPage();
+    case "teleconsultation":
+      return renderPlaceholder("menu_teleconsultation", "feature_in_progress", "🩺");
+    case "messaging":
+      return renderPlaceholder("menu_messaging", "feature_in_progress", "💬");
+    case "checklist":
+      return renderChecklist();
     default:
       return "Error";
   }
@@ -1058,7 +1135,9 @@ function attachEventListeners() {
   const btnVoiceCode = document.getElementById("btn-voice-code");
   if (btnVoiceCode) {
     btnVoiceCode.onclick = async () => {
+      if (!state.selections.phone) return;
       state.isLoading = true;
+      state.selections.verificationMethod = "phone";
       await updateUI();
       // Simulate voice call request
       await new Promise(r => setTimeout(r, 1500));
@@ -1066,7 +1145,7 @@ function attachEventListeners() {
       state.isLoading = false;
       await updateUI();
       if (state.mode === "beginner") {
-        voice.speak(t("magic_link_sent"));
+        voice.speak(t("verification_phone_sent"));
       }
     };
   }
@@ -1085,8 +1164,6 @@ function attachEventListeners() {
   const btnBack = document.getElementById("btn-back");
   if (btnBack) btnBack.onclick = goBack;
 
-  const btnUndo = document.getElementById("btn-undo");
-  if (btnUndo) btnUndo.onclick = goBack;
 
   document.querySelectorAll(".btn-cancel-appt").forEach((button) => {
     button.onclick = async () => {
@@ -1188,8 +1265,16 @@ function attachEventListeners() {
     };
   }
 
+  const btnShowChecklist = document.getElementById("btn-show-checklist");
+  if (btnShowChecklist) btnShowChecklist.onclick = () => navigateTo("checklist");
+
   const btnRestart = document.getElementById("btn-restart");
-  if (btnRestart) btnRestart.onclick = () => window.location.reload();
+  if (btnRestart) {
+    btnRestart.onclick = async () => {
+      resetState();
+      await updateUI();
+    };
+  }
 
   const logoHome = document.getElementById("logo-home");
   if (logoHome) logoHome.onclick = () => window.location.reload();
@@ -1360,10 +1445,22 @@ function attachEventListeners() {
 
 async function updateUI() {
   const app = document.getElementById("app");
-  app.className = `flex flex-col min-h-screen mode-${state.mode} ${state.isSidebarOpen ? "overflow-hidden" : ""} ${state.dyslexicMode ? "dyslexic-mode" : ""}`;
+  app.className = `flex flex-col min-h-screen mode-${state.mode} ${state.isSidebarOpen ? "overflow-hidden" : ""} ${state.dyslexicMode ? "dyslexic-mode" : ""} ${state.lang === 'ar' ? 'rtl' : 'ltr'}`;
   document.body.classList.toggle("dyslexic-mode", state.dyslexicMode);
+  document.body.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
   app.innerHTML = `${renderHeader()}${renderSidebar()}<main class="flex-grow container mx-auto px-4 py-12 max-w-7xl w-full">${state.isLoading ? renderLoader() : renderStep()}</main>${renderFooter()}${renderZasBot()}`;
   attachEventListeners();
+
+  // Auto-start tutorial for new users
+  if (state.step === "profile") {
+    const hasSeenTuto = localStorage.getItem("zas_tuto_welcome_seen");
+    if (!hasSeenTuto) {
+      localStorage.setItem("zas_tuto_welcome_seen", "true");
+      setTimeout(() => {
+        startTutorialForStep("profile", state.lang);
+      }, 1000);
+    }
+  }
 
   if (state.pendingHighlightId) {
     const pending = state.pendingHighlightId;
