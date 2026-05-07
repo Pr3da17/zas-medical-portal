@@ -63,8 +63,21 @@ const STEP_BY_REQUEST = {
   contact: "contact"
 };
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsKeyword(text, keyword) {
+  if (keyword.includes(" ")) {
+    return text.includes(keyword);
+  }
+
+  const pattern = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, "i");
+  return pattern.test(text);
+}
+
 function includesAny(text, words) {
-  return words.some((word) => text.includes(word));
+  return words.some((word) => containsKeyword(text, word));
 }
 
 function detectIntent(query) {
@@ -108,6 +121,20 @@ export const botBrain = {
     const query = input.toLowerCase();
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    const intent = detectIntent(query);
+    if (intent && STEP_BY_REQUEST[intent]) {
+      const step = STEP_BY_REQUEST[intent];
+      return {
+        text: responseByLang(lang, {
+          fr: `Bien sur. Je vous guide vers l'etape suivante pour continuer votre rendez-vous.`,
+          nl: `Natuurlijk. Ik breng u naar de juiste stap om uw afspraak verder te zetten.`,
+          en: `Of course. I will guide you to the right step to continue your appointment.`
+        }),
+        action: "navigate",
+        targetStep: step
+      };
+    }
+
     const specialtyId = detectSpecialty(query);
     if (specialtyId) {
       const label = specialtyLabel(specialtyId, lang);
@@ -120,20 +147,6 @@ export const botBrain = {
         action: "navigate-and-highlight",
         targetStep: "specialty",
         targetId: `spec-${specialtyId}`
-      };
-    }
-
-    const intent = detectIntent(query);
-    if (intent && STEP_BY_REQUEST[intent]) {
-      const step = STEP_BY_REQUEST[intent];
-      return {
-        text: responseByLang(lang, {
-          fr: `Bien sur. Je vous guide vers l'etape suivante pour continuer votre rendez-vous.`,
-          nl: `Natuurlijk. Ik breng u naar de juiste stap om uw afspraak verder te zetten.`,
-          en: `Of course. I will guide you to the right step to continue your appointment.`
-        }),
-        action: "navigate",
-        targetStep: step
       };
     }
 

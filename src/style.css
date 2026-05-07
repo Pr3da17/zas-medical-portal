@@ -14,49 +14,52 @@
 
 @layer base {
   body {
-    @apply bg-[#FDFDFD] text-[#1A2E35] font-sans min-h-screen flex flex-col antialiased;
+    @apply bg-[#F8FBFC] text-[#1A2E35] font-sans min-h-screen flex flex-col antialiased;
+    font-family: "Manrope", sans-serif;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(0, 165, 173, 0.03) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(0, 165, 173, 0.03) 0px, transparent 50%);
+      radial-gradient(circle at top left, rgba(0, 165, 173, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(0, 122, 128, 0.06), transparent 24%),
+      linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,251,252,1) 100%);
     overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Outfit", sans-serif;
   }
 }
 
 @layer components {
-  /* Soft & Round Primary Button */
   .btn-primary {
-    @apply relative bg-hospital-primary text-white rounded-[32px] font-black px-10 py-6 
-           flex items-center justify-center gap-4 shadow-[0_15px_30px_-5px_rgba(0,165,173,0.3)] 
-           hover:shadow-[0_25px_50px_-10px_rgba(0,165,173,0.4)] hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer;
+    @apply relative text-white rounded-[24px] font-black px-8 py-5 flex items-center justify-center gap-4
+           shadow-[0_18px_40px_-18px_rgba(0,122,128,0.65)] hover:-translate-y-0.5 active:scale-[0.99]
+           transition-all duration-300 cursor-pointer;
+    background: linear-gradient(135deg, #00a5ad 0%, #007a80 100%);
   }
 
-  /* Elegant Outline Button */
   .btn-outline {
-    @apply border-4 border-hospital-primary/20 text-hospital-primary bg-white rounded-[32px] font-black px-10 py-6 
-           flex items-center justify-center gap-4 hover:border-hospital-primary hover:bg-hospital-secondary transition-all duration-300 cursor-pointer;
+    @apply border-2 border-hospital-primary/15 text-hospital-primary bg-white/95 rounded-[24px] font-black px-8 py-5
+           flex items-center justify-center gap-4 hover:border-hospital-primary hover:bg-hospital-secondary
+           transition-all duration-300 cursor-pointer shadow-[0_16px_35px_-22px_rgba(15,23,42,0.45)];
   }
 
-  /* Soft UI Cards */
   .card-zas {
-    @apply bg-white rounded-[48px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-10 border border-gray-50
-           transition-all duration-500 hover:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.08)];
+    @apply bg-white backdrop-blur-sm rounded-[32px] shadow-[0_28px_70px_-34px_rgba(15,23,42,0.30)] p-8 border border-white
+           transition-all duration-500 hover:shadow-[0_30px_80px_-28px_rgba(15,23,42,0.26)];
   }
 
-  /* Floating Profile Cards */
   .profile-option {
-    @apply relative flex flex-col items-center justify-center p-12 rounded-[56px] border-4 border-transparent 
-           bg-white shadow-xl transition-all duration-500 cursor-pointer text-center hover:-translate-y-2;
+    @apply relative flex flex-col items-center justify-center p-10 rounded-[36px] border-2 border-transparent
+           bg-white shadow-[0_28px_70px_-34px_rgba(15,23,42,0.28)] transition-all duration-500 cursor-pointer text-center hover:-translate-y-1;
   }
 
   .profile-option:hover {
-    @apply border-hospital-primary shadow-[0_30px_60px_-20px_rgba(0,165,173,0.15)];
+    @apply border-hospital-primary/40 shadow-[0_34px_70px_-28px_rgba(0,122,128,0.18)];
   }
 
   .profile-option.active {
     @apply border-hospital-primary bg-hospital-secondary scale-105;
   }
 
-  /* Progress Indicators */
   .progress-bar-container {
     @apply flex items-center justify-center gap-3;
   }
@@ -76,7 +79,6 @@
   }
 }
 
-/* Smooth Reveal Animation with Blur */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px) scale(0.98); filter: blur(10px); }
   to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
@@ -86,7 +88,6 @@
   animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Guiding Focus (Professional Version) */
 .guiding-focus {
   @apply ring-[12px] ring-hospital-primary/20 border-hospital-primary scale-105 z-[100] !important;
   animation: soft-pulse 2s infinite;
@@ -98,7 +99,6 @@
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 165, 173, 0); }
 }
 
-/* Custom Scrollbar (Subtle) */
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: #FDFDFD; }
 ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; border: 3px solid #FDFDFD; }
@@ -116,4 +116,37 @@
 }
 .animate-slide-in-left {
   animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.zas-driver-popover {
+  border-radius: 24px !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 30px 80px -28px rgba(15, 23, 42, 0.35) !important;
+  padding: 22px !important;
+  max-width: 380px !important;
+}
+
+.zas-driver-popover .driver-popover-title {
+  font-family: "Outfit", sans-serif !important;
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: #007a80 !important;
+  line-height: 1.2 !important;
+  margin-bottom: 0.65rem !important;
+}
+
+.zas-driver-popover .driver-popover-description {
+  font-family: "Manrope", sans-serif !important;
+  font-size: 1.12rem !important;
+  line-height: 1.7 !important;
+  color: #475569 !important;
+}
+
+.zas-driver-popover .driver-popover-next-btn,
+.zas-driver-popover .driver-popover-prev-btn,
+.zas-driver-popover .driver-popover-close-btn {
+  border-radius: 999px !important;
+  font-size: 0.98rem !important;
+  font-weight: 800 !important;
+  padding: 0.55rem 1rem !important;
 }
