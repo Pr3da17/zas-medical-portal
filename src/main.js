@@ -106,6 +106,31 @@ function getVerificationTarget() {
   return state.selections.verificationMethod === "phone" ? state.selections.phone : state.selections.email;
 }
 
+function resetState() {
+  state.step = "profile";
+  state.data = { specialties: [], hospitals: [], doctors: [], slots: [] };
+  state.selections = {
+    specialtyId: null,
+    specialtyKey: null,
+    campusId: null,
+    doctor: null,
+    date: null,
+    time: null,
+    verificationMethod: "phone",
+    phone: "",
+    email: "",
+    companionEmail: "",
+    cardioAnswers: {}
+  };
+  state.isLoading = false;
+  state.history = [];
+  state.chatHistory = [];
+  state.isSidebarOpen = false;
+  state.pendingHighlightId = null;
+  state.editingAppointmentId = null;
+  state.verificationError = "";
+}
+
 async function navigateTo(nextStep, { replaceHistory = false } = {}) {
   if (nextStep !== "profile" && !canNavigateTo(nextStep) && nextStep !== "specialty") {
     const message = t("julien_help");
@@ -229,12 +254,12 @@ function renderSidebar() {
         </div>
         <div class="p-8 flex-grow overflow-y-auto space-y-6">
           ${filteredLinks.map((link) => `
-            <button class="sidebar-link w-full text-left flex items-center gap-8 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${link.color}" data-step="${link.step}">
-              <span class="text-4xl shrink-0">${link.icon}</span>
-              <span class="flex-1 min-w-0 font-black text-2xl tracking-tighter uppercase ${link.color.includes("text-white") ? "text-white" : "text-slate-800"}">${t(link.key)}</span>
+            <button class="sidebar-link w-full text-left flex items-center justify-start gap-6 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${link.color}" data-step="${link.step}">
+              <span class="w-14 text-center text-4xl shrink-0">${link.icon}</span>
+              <span class="block flex-1 font-black text-2xl tracking-tighter uppercase leading-tight whitespace-normal ${link.color.includes("text-white") ? "text-white" : "text-slate-800"}">${t(link.key) || "Contact"}</span>
 
-            </button>
-          `).join("")}
+              </button>
+            `).join("")}
         </div>
         <div class="p-8 bg-slate-50 border-t-4 border-slate-100">
           <div class="flex items-center gap-4 text-slate-500 font-bold uppercase text-xs tracking-widest">
@@ -867,6 +892,115 @@ function renderChecklist() {
   `;
 }
 
+function renderSuccessFixed() {
+  const checklistLabelByLang = {
+    fr: "Liste de preparation",
+    nl: "Voorbereidingschecklist",
+    en: "Preparation Checklist",
+    ar: "قائمة التحضير"
+  };
+  const checklistLabel = checklistLabelByLang[state.lang] || checklistLabelByLang.en;
+
+  return `
+    <div class="text-center space-y-12 py-20 reveal max-w-4xl mx-auto">
+      <div class="mx-auto w-28 h-28 rounded-full bg-hospital-secondary text-hospital-primary flex items-center justify-center text-4xl font-black shadow-inner">
+        Z
+      </div>
+      <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter leading-none">${t("success")}</h1>
+      <div class="flex flex-col gap-6 items-center">
+        <button id="btn-show-checklist" class="btn-primary px-16 py-8 text-2xl font-black uppercase tracking-widest rounded-[32px] shadow-xl">
+          ${checklistLabel}
+        </button>
+        <button id="btn-restart" class="btn-outline mx-auto text-3xl px-16 py-8 border-[6px] rounded-[40px] shadow-xl">${t("home").toUpperCase()}</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderChecklistFixed() {
+  const checklistCopy = {
+    fr: {
+      title: "Liste de preparation",
+      desc: "A faire avant votre rendez-vous",
+      step: "Etape",
+      items: {
+        id_card: "Apportez votre carte d'identite.",
+        referral_letter: "Gardez votre confirmation ou lettre de reference a portee de main.",
+        medication_list: "Preparez votre liste de medicaments ou vos informations medicales utiles.",
+        arrival_time: "Prevoyez d'arriver un peu en avance pour votre rendez-vous."
+      }
+    },
+    nl: {
+      title: "Voorbereidingschecklist",
+      desc: "Wat u best doet voor uw afspraak",
+      step: "Stap",
+      items: {
+        id_card: "Breng uw identiteitskaart mee.",
+        referral_letter: "Hou uw bevestiging of verwijsbrief bij de hand.",
+        medication_list: "Bereid uw medicatielijst of belangrijke medische informatie voor.",
+        arrival_time: "Voorzie dat u iets vroeger aankomt voor uw afspraak."
+      }
+    },
+    en: {
+      title: "Preparation Checklist",
+      desc: "What to do before your appointment",
+      step: "Step",
+      items: {
+        id_card: "Bring your ID card.",
+        referral_letter: "Keep your confirmation or referral letter nearby.",
+        medication_list: "Prepare your medication list or important medical information.",
+        arrival_time: "Plan to arrive a little early for your appointment."
+      }
+    },
+    ar: {
+      title: "قائمة التحضير",
+      desc: "ما يجب القيام به قبل موعدك",
+      step: "الخطوة",
+      items: {
+        id_card: "أحضر بطاقتك الشخصية.",
+        referral_letter: "احتفظ بتأكيد الموعد أو رسالة الإحالة بالقرب منك.",
+        medication_list: "جهز قائمة الأدوية أو المعلومات الطبية المهمة.",
+        arrival_time: "خطط للوصول قبل موعدك بقليل."
+      }
+    }
+  };
+  const checklistText = checklistCopy[state.lang] || checklistCopy.en;
+  const items = [
+    { key: "id_card", label: "ID" },
+    { key: "referral_letter", label: "LETTER" },
+    { key: "medication_list", label: "MEDS" },
+    { key: "arrival_time", label: "TIME" }
+  ];
+
+  return `
+    <div class="space-y-16 reveal max-w-3xl mx-auto">
+      <div class="text-center space-y-6">
+        <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${checklistText.title}</h1>
+        <p class="text-2xl font-bold text-slate-400">${checklistText.desc}</p>
+      </div>
+      <div class="grid grid-cols-1 gap-6">
+        ${items.map((item, index) => `
+          <div class="card-zas flex items-center gap-8 p-8 border-4 border-slate-50 hover:border-hospital-primary transition-all group">
+            <div class="min-w-[5rem] h-20 bg-slate-50 rounded-[28px] flex items-center justify-center text-lg font-black text-hospital-primary group-hover:bg-hospital-secondary transition-colors px-4">
+              ${item.label}
+            </div>
+            <div class="flex-grow">
+              <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">${checklistText.step} ${index + 1}</h3>
+              <p class="text-xl font-bold text-slate-400">${checklistText.items[item.key]}</p>
+            </div>
+            <div class="w-12 h-12 rounded-full border-4 border-slate-100 flex items-center justify-center text-hospital-primary font-black text-base">
+              OK
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <button id="btn-restart" class="btn-primary w-full text-3xl py-8 uppercase tracking-widest font-black rounded-[32px] shadow-xl">
+        ${t("home")}
+      </button>
+    </div>
+  `;
+}
+
 function renderStep() {
   switch (state.step) {
     case "profile":
@@ -888,7 +1022,7 @@ function renderStep() {
     case "questionnaire":
       return renderQuestionnaire();
     case "success":
-      return renderSuccess();
+      return renderSuccessFixed();
     case "faq":
       return renderFaqPage();
     case "documents":
@@ -902,7 +1036,7 @@ function renderStep() {
     case "messaging":
       return renderPlaceholder("menu_messaging", "feature_in_progress", "💬");
     case "checklist":
-      return renderChecklist();
+      return renderChecklistFixed();
     default:
       return "Error";
   }

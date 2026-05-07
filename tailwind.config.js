@@ -13,6 +13,9 @@ export default {
           accent: '#007A80', // Darker turquoise for contrast
           error: '#D32F2F',
         },
+        zas: {
+          coral: '#FF6B6B',
+        },
       },
       spacing: {
         'touch': '60px',
