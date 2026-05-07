@@ -207,8 +207,8 @@ function renderSidebar() {
         <div class="p-8 flex-grow overflow-y-auto space-y-6">
           ${links.map((link) => `
             <button class="sidebar-link w-full text-left flex items-center gap-8 p-8 rounded-[32px] transition-all hover:scale-[1.02] shadow-sm ${link.color}" data-step="${link.step}">
-              <span class="text-5xl">${link.icon}</span>
-              <span class="font-black text-2xl tracking-tighter uppercase ${link.color.includes("text-white") ? "text-white" : ""}">${t(link.key)}</span>
+              <span class="text-4xl shrink-0">${link.icon}</span>
+              <span class="flex-1 min-w-0 font-black text-2xl tracking-tighter uppercase ${link.color.includes("text-white") ? "text-white" : "text-slate-800"}">${t(link.key)}</span>
             </button>
           `).join("")}
         </div>
@@ -274,24 +274,99 @@ function renderPlaceholder(titleKey, subtitleKey) {
 }
 
 function renderDocumentsPage() {
+  const appointmentsData = localStorage.getItem("zas_appointments");
+  const appointments = appointmentsData ? JSON.parse(appointmentsData) : [];
+  const nextAppointment = appointments[appointments.length - 1] || null;
   const documents = [
-    { title: t("doc_card_1_title"), desc: t("doc_card_1_desc"), icon: "📄" },
-    { title: t("doc_card_2_title"), desc: t("doc_card_2_desc"), icon: "🧪" },
-    { title: t("doc_card_3_title"), desc: t("doc_card_3_desc"), icon: "📝" }
+    { title: t("doc_card_1_title"), desc: t("doc_card_1_desc"), icon: "📄", badge: t("doc_badge_ready") },
+    { title: t("doc_card_2_title"), desc: t("doc_card_2_desc"), icon: "🧪", badge: t("doc_badge_recent") },
+    { title: t("doc_card_3_title"), desc: t("doc_card_3_desc"), icon: "📝", badge: t("doc_badge_before_visit") }
   ];
-
+  const checklist = [t("doc_checklist_1"), t("doc_checklist_2"), t("doc_checklist_3")];
+  
   return `
-    <div class="max-w-5xl mx-auto space-y-10 reveal">
+    <div class="max-w-6xl mx-auto space-y-10 reveal">
       <div class="text-center space-y-4">
         <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter">${t("page_documents_title")}</h1>
         <p class="text-xl font-bold text-slate-400 max-w-3xl mx-auto">${t("page_documents_intro")}</p>
       </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-6">
+        <div class="card-zas space-y-6">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p class="text-sm font-black uppercase tracking-[0.25em] text-slate-400">${t("documents_focus_label")}</p>
+              <h2 class="text-3xl font-black text-hospital-primary tracking-tight">${t("documents_next_visit_title")}</h2>
+            </div>
+            <div class="rounded-full bg-hospital-secondary px-5 py-2 text-sm font-black text-hospital-primary">${t("documents_important_badge")}</div>
+          </div>
+          ${nextAppointment ? `
+            <div class="rounded-[28px] bg-slate-50 border border-slate-100 p-6 md:p-8 space-y-5">
+              <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p class="text-sm font-black uppercase tracking-[0.22em] text-slate-400">${t("documents_next_visit_title")}</p>
+                  <h3 class="text-2xl md:text-3xl font-black text-slate-800">${nextAppointment.doctor?.name || t("doctor")}</h3>
+                  <p class="text-lg font-bold text-slate-500 mt-2">${nextAppointment.date || "-"} • ${nextAppointment.time || "-"}</p>
+                </div>
+                <div class="rounded-2xl bg-white px-4 py-3 shadow-sm border border-slate-100">
+                  <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">${t("specialty")}</p>
+                  <p class="text-lg font-black text-hospital-primary">${t(nextAppointment.specialtyKey || "progress_specialty")}</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="rounded-2xl bg-white p-4 border border-slate-100">
+                  <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">${t("documents_detail_location")}</p>
+                  <p class="text-lg font-black text-slate-700">ZAS Cadix</p>
+                </div>
+                <div class="rounded-2xl bg-white p-4 border border-slate-100">
+                  <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">${t("documents_detail_verification")}</p>
+                  <p class="text-lg font-black text-slate-700">${nextAppointment.verificationMethod === "email" ? t("email") : t("phone")}</p>
+                </div>
+                <div class="rounded-2xl bg-white p-4 border border-slate-100">
+                  <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">${t("documents_detail_status")}</p>
+                  <p class="text-lg font-black text-emerald-600">${t("documents_status_ready")}</p>
+                </div>
+              </div>
+            </div>
+          ` : `
+            <div class="rounded-[28px] bg-slate-50 border border-dashed border-slate-200 p-8 text-center">
+              <p class="text-xl font-black text-slate-500">${t("documents_no_appointment")}</p>
+              <p class="text-base font-bold text-slate-400 mt-3">${t("documents_no_appointment_hint")}</p>
+            </div>
+          `}
+        </div>
+
+        <div class="card-zas space-y-5">
+          <div>
+            <p class="text-sm font-black uppercase tracking-[0.25em] text-slate-400">${t("documents_focus_label")}</p>
+            <h2 class="text-3xl font-black text-hospital-primary tracking-tight">${t("documents_checklist_title")}</h2>
+          </div>
+          <div class="space-y-4">
+            ${checklist.map((item) => `
+              <div class="flex items-start gap-4 rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                <div class="w-10 h-10 rounded-full bg-hospital-secondary text-hospital-primary flex items-center justify-center font-black shrink-0">✓</div>
+                <p class="text-lg font-bold text-slate-600 leading-relaxed">${item}</p>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         ${documents.map((document) => `
-          <div class="card-zas space-y-4">
-            <div class="text-5xl">${document.icon}</div>
+          <div class="card-zas space-y-5">
+            <div class="flex items-center justify-between gap-4">
+              <div class="text-5xl">${document.icon}</div>
+              <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-slate-500">${document.badge}</div>
+            </div>
             <h2 class="text-2xl font-black text-hospital-primary tracking-tight">${document.title}</h2>
             <p class="text-slate-500 font-bold leading-relaxed">${document.desc}</p>
+            <div class="pt-2">
+              <div class="inline-flex items-center gap-2 rounded-full bg-hospital-secondary px-4 py-2 text-sm font-black text-hospital-primary">
+                <span>•</span>
+                <span>${t("documents_available_now")}</span>
+              </div>
+            </div>
           </div>
         `).join("")}
       </div>

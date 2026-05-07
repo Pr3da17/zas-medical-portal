@@ -70,7 +70,7 @@ const FAQ_TOPICS = {
   },
   bring: {
     step: "documents",
-    keywords: ["bring", "meebrengen", "meenemen", "apporter", "need to bring", "what do i need", "documents", "documenten", "id card", "identiteitskaart"]
+    keywords: ["bring", "meebrengen", "meenemen", "apporter", "need to bring", "what do i need", "what should i bring", "what do i bring", "take with me", "wat breng ik mee", "wat moet ik meenemen", "qu est ce que je dois apporter", "documents", "documenten", "id card", "identiteitskaart", "medication list", "medicatielijst"]
   },
   change: {
     step: "faq",
@@ -155,9 +155,9 @@ function faqResponse(topic, lang) {
       en: "ZAS Cadix is located at Kattendijkdok-Oostkaai 21, 2000 Antwerp. I will also show you the contact page with the key details."
     }),
     bring: responseByLang(lang, {
-      fr: "Pour votre rendez-vous, prevoyez surtout votre carte d'identite, votre confirmation et tout document medical utile. Je vous montre la page Documents pour retrouver l'essentiel.",
-      nl: "Breng voor uw afspraak vooral uw identiteitskaart, uw bevestiging en relevante medische documenten mee. Ik toon u de pagina Documenten met de belangrijkste info.",
-      en: "For your appointment, please bring your ID card, your confirmation, and any relevant medical documents. I will show you the Documents page with the most useful information."
+      fr: "Pour votre rendez-vous, prevoyez surtout votre carte d'identite, votre confirmation, vos documents medicaux utiles et votre liste de medicaments si necessaire. Je vous montre la page Documents avec la checklist essentielle.",
+      nl: "Breng voor uw afspraak vooral uw identiteitskaart, uw bevestiging, relevante medische documenten en indien nodig uw medicatielijst mee. Ik toon u de pagina Documenten met de belangrijkste checklist.",
+      en: "For your appointment, please bring your ID card, your confirmation, any relevant medical documents, and your medication list if needed. I will show you the Documents page with the essential checklist."
     }),
     change: responseByLang(lang, {
       fr: "Oui, vous pouvez modifier un rendez-vous depuis l'accueil via le bouton Modifier. Je vous montre aussi la FAQ ou cela est explique clairement.",
@@ -263,6 +263,11 @@ export const botBrain = {
           fr: "Verifiez le recapitulatif puis confirmez le rendez-vous.",
           nl: "Controleer het overzicht en bevestig daarna de afspraak.",
           en: "Review the summary and then confirm the appointment."
+        }),
+        documents: responseByLang(lang, {
+          fr: "Sur cette page, vous voyez les documents essentiels, votre prochaine visite et ce qu'il faut preparer avant de venir.",
+          nl: "Op deze pagina ziet u de belangrijkste documenten, uw volgende bezoek en wat u best voorbereidt voor u komt.",
+          en: "On this page, you can review the essential documents, your next visit, and what to prepare before you come."
         })
       };
 
