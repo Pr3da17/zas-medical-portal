@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700;800;900&display=swap');
+
 :root {
   --zas-primary: #00A5AD;
   --zas-primary-soft: #E0F7F8;
@@ -149,4 +151,67 @@
   font-size: 0.98rem !important;
   font-weight: 800 !important;
   padding: 0.55rem 1rem !important;
+}
+
+/* Scale System for Cardiology */
+.scale-item {
+  @apply w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-2xl border-4 border-slate-100 
+         font-black text-xl md:text-2xl transition-all duration-300 cursor-pointer text-slate-400 bg-white;
+}
+
+.scale-item:hover {
+  @apply border-hospital-primary text-hospital-primary scale-110 shadow-lg -translate-y-1;
+}
+
+.scale-item.active {
+  @apply bg-hospital-primary text-white border-hospital-primary shadow-xl scale-110;
+}
+
+.scale-label {
+  @apply text-xs md:text-sm font-black uppercase tracking-widest text-slate-400 mt-4;
+}
+
+.question-card {
+  @apply p-8 rounded-[40px] bg-slate-50 border-2 border-slate-100 transition-all duration-500 hover:bg-white hover:shadow-xl hover:border-hospital-primary/20;
+}
+
+/* Dyslexic Mode Styles */
+.dyslexic-mode {
+  --dyslexic-font: 'Lexend', sans-serif;
+  font-family: var(--dyslexic-font) !important;
+}
+
+.dyslexic-mode * {
+  font-family: var(--dyslexic-font) !important;
+  line-height: 1.8 !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  text-align: left !important;
+}
+
+.dyslexic-mode .text-center, 
+.dyslexic-mode .justify-center {
+  text-align: left !important;
+}
+
+.dyslexic-mode h1, 
+.dyslexic-mode h2, 
+.dyslexic-mode h3 {
+  letter-spacing: 0.02em !important;
+  line-height: 1.4 !important;
+  margin-bottom: 1rem !important;
+}
+
+.dyslexic-mode .btn-primary,
+.dyslexic-mode .btn-outline,
+.dyslexic-mode button {
+  letter-spacing: 0.03em !important;
+  text-align: center !important; /* Keep buttons centered for UX */
+}
+
+.dyslexic-mode p, 
+.dyslexic-mode span, 
+.dyslexic-mode div {
+  /* Reduce visual stress with a very slight tint if needed, 
+     but let's focus on typography first as per standard requests */
 }

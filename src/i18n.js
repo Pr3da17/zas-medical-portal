@@ -246,7 +246,20 @@ export const translations = {
     edit_appointment: "Modifier",
     cancel_appointment: "Annuler",
     question_history: "Avez-vous des antécédents médicaux récents ?",
-    question_medication: "Prenez-vous des médicaments actuellement ?"
+    question_medication: "Prenez-vous des médicaments actuellement ?",
+    q_cardio_pain: "Intensité de la douleur thoracique",
+    q_cardio_breath: "Difficulté à respirer (essoufflement)",
+    q_cardio_palpitations: "Fréquence des palpitations cardiaques",
+    q_cardio_fatigue: "Niveau de fatigue ou d'épuisement",
+    scale_low: "Faible / Jamais",
+    scale_high: "Intense / Constant",
+    voice_help_start: "Activer la lecture vocale",
+    voice_help_stop: "Désactiver la lecture vocale",
+    dyslexic_mode_start: "Activer le mode dyslexique",
+    dyslexic_mode_stop: "Désactiver le mode dyslexique",
+    no_phone_label: "Pas de téléphone portable ?",
+    call_for_appointment: "Appeler pour prendre rendez-vous",
+    receive_code_by_voice: "Recevoir le code par appel (téléphone fixe)"
   },
   nl: {
     title: "ZAS Antwerpen",
@@ -495,7 +508,20 @@ export const translations = {
     edit_appointment: "Wijzigen",
     cancel_appointment: "Annuleren",
     question_history: "Heeft u recente medische antecedenten?",
-    question_medication: "Neemt u momenteel medicijnen?"
+    question_medication: "Neemt u momenteel medicijnen?",
+    q_cardio_pain: "Intensiteit van pijn op de borst",
+    q_cardio_breath: "Moeite met ademhalen (kortademigheid)",
+    q_cardio_palpitations: "Frequentie van hartkloppingen",
+    q_cardio_fatigue: "Niveau van vermoeidheid of uitputting",
+    scale_low: "Laag / Nooit",
+    scale_high: "Intens / Altijd",
+    voice_help_start: "Start spraaklezer",
+    voice_help_stop: "Stop spraaklezer",
+    dyslexic_mode_start: "Dyslexiemodus inschakelen",
+    dyslexic_mode_stop: "Dyslexiemodus uitschakelen",
+    no_phone_label: "Geen gsm?",
+    call_for_appointment: "Bel om een afspraak te maken",
+    receive_code_by_voice: "Ontvang de code via een oproep (vaste lijn)"
   },
   en: {
     title: "ZAS Antwerpen",
@@ -744,6 +770,19 @@ export const translations = {
     edit_appointment: "Edit",
     cancel_appointment: "Cancel",
     question_history: "Do you have any recent medical history?",
-    question_medication: "Are you currently taking any medication?"
+    question_medication: "Are you currently taking any medication?",
+    q_cardio_pain: "Intensity of chest pain",
+    q_cardio_breath: "Difficulty breathing (shortness of breath)",
+    q_cardio_palpitations: "Frequency of heart palpitations",
+    q_cardio_fatigue: "Level of fatigue or exhaustion",
+    scale_low: "Low / Never",
+    scale_high: "Intense / Constant",
+    voice_help_start: "Start voice reader",
+    voice_help_stop: "Stop voice reader",
+    dyslexic_mode_start: "Enable dyslexic mode",
+    dyslexic_mode_stop: "Disable dyslexic mode",
+    no_phone_label: "No mobile phone?",
+    call_for_appointment: "Call to make an appointment",
+    receive_code_by_voice: "Receive the code via call (landline)"
   }
 };

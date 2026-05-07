@@ -21,7 +21,8 @@ const state = {
     verificationMethod: "phone",
     phone: "",
     email: "",
-    companionEmail: ""
+    companionEmail: "",
+    cardioAnswers: {}
   },
   isLoading: false,
   history: [],
@@ -29,7 +30,9 @@ const state = {
   isSidebarOpen: false,
   pendingHighlightId: null,
   editingAppointmentId: null,
-  verificationError: ""
+  verificationError: "",
+  readerEnabled: false,
+  dyslexicMode: localStorage.getItem("zas_dyslexic_mode") === "true"
 };
 
 const stepsOrder = ["profile", "specialty", "campus", "doctor", "schedule", "contact", "verification", "confirm", "questionnaire", "success"];
@@ -57,15 +60,17 @@ function getWeekNumber(date) {
 
 function resetSelectionsFromStep(step) {
   const resetMap = {
-    specialty: ["specialtyId", "specialtyKey", "campusId", "doctor", "date", "time", "phone", "email", "companionEmail"],
-    campus: ["campusId", "doctor", "date", "time", "phone", "email", "companionEmail"],
-    doctor: ["doctor", "date", "time", "phone", "email", "companionEmail"],
-    schedule: ["date", "time", "phone", "email", "companionEmail"],
-    contact: ["phone", "email", "companionEmail"]
+    specialty: ["specialtyId", "specialtyKey", "campusId", "doctor", "date", "time", "phone", "email", "companionEmail", "cardioAnswers"],
+    campus: ["campusId", "doctor", "date", "time", "phone", "email", "companionEmail", "cardioAnswers"],
+    doctor: ["doctor", "date", "time", "phone", "email", "companionEmail", "cardioAnswers"],
+    schedule: ["date", "time", "phone", "email", "companionEmail", "cardioAnswers"],
+    contact: ["phone", "email", "companionEmail", "cardioAnswers"]
   };
 
   (resetMap[step] || []).forEach((key) => {
-    state.selections[key] = key === "doctor" ? null : "";
+    if (key === "doctor") state.selections[key] = null;
+    else if (key === "cardioAnswers") state.selections[key] = {};
+    else state.selections[key] = "";
   });
   if (resetMap[step]) {
     state.selections.verificationMethod = "phone";
@@ -158,8 +163,17 @@ function renderHeader() {
         </div>
         <div class="flex items-center gap-4 md:gap-8">
           <button id="tuto-btn" class="${tutorialClasses}">${t("tuto_btn")}</button>
-          <button id="voice-toggle" title="${voice.isListening ? t("voice_stop") : t("voice_start")}" class="w-16 h-16 rounded-[24px] ${voice.isListening ? "bg-hospital-primary text-white" : "bg-hospital-secondary text-hospital-primary"} flex items-center justify-center border-2 border-hospital-primary/10 transition-all shadow-lg">
-            <span class="text-3xl">${voice.isListening ? "🎙️" : "🎤"}</span>
+          <button id="reader-toggle" title="${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${state.readerEnabled ? "bg-zas-coral text-white border-zas-coral" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}">
+            <span class="text-2xl">${state.readerEnabled ? "🔊" : "🔈"}</span>
+            <span class="hidden xl:inline whitespace-nowrap">${state.readerEnabled ? t("voice_help_stop") : t("voice_help_start")}</span>
+          </button>
+          <button id="dyslexic-toggle" title="${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${state.dyslexicMode ? "bg-hospital-primary text-white border-hospital-primary" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}">
+            <span class="text-2xl">👓</span>
+            <span class="hidden xl:inline whitespace-nowrap">${state.dyslexicMode ? t("dyslexic_mode_stop") : t("dyslexic_mode_start")}</span>
+          </button>
+          <button id="voice-toggle" title="${voice.isListening ? t("voice_stop") : t("voice_start")}" class="px-6 py-4 rounded-[24px] font-black uppercase text-sm border-2 transition-all shadow-lg flex items-center gap-2 ${voice.isListening ? "bg-hospital-primary text-white border-hospital-primary" : "bg-hospital-secondary text-hospital-primary border-hospital-primary/10 hover:bg-hospital-primary/20"}">
+            <span class="text-2xl">${voice.isListening ? "🎙️" : "🎤"}</span>
+            <span class="hidden xl:inline whitespace-nowrap">${voice.isListening ? t("voice_stop") : t("voice_start")}</span>
           </button>
         </div>
       </div>
@@ -648,6 +662,13 @@ function renderContactInfo() {
         </div>
         <button id="btn-submit-contact" class="btn-primary w-full text-4xl py-10 uppercase tracking-widest font-black">${t("next")} ➡️</button>
       </div>
+
+      <div class="max-w-3xl mx-auto p-12 rounded-[40px] border-4 border-dashed border-slate-200 bg-white/50 text-center space-y-6">
+        <p class="text-2xl text-slate-400 font-bold">${t("no_phone_label")}</p>
+        <button id="btn-call-appointment" class="btn-outline w-full text-2xl py-8 border-zas-coral text-zas-coral hover:bg-red-50 hover:border-zas-coral">
+          📞 ${t("call_for_appointment")}
+        </button>
+      </div>
     </div>
   `;
 }
@@ -668,6 +689,12 @@ function renderSmsVerification() {
         <div class="flex justify-center gap-4">${[1, 2, 3, 4].map(() => `<input type="text" maxlength="1" class="code-input w-24 h-32 text-center text-6xl font-black bg-slate-50 border-4 border-gray-100 rounded-[24px] outline-none" />`).join("")}</div>
         <p class="${state.verificationError ? "block" : "hidden"} text-zas-coral font-bold text-lg bg-red-50 rounded-2xl px-6 py-4">${state.verificationError}</p>
         <button id="btn-verify-code" class="btn-primary w-full text-3xl py-8">${t("verify_code")} ✅</button>
+        
+        <div class="pt-8 border-t-2 border-slate-50">
+          <button id="btn-voice-code" class="text-hospital-primary font-black uppercase tracking-widest text-sm hover:underline flex items-center justify-center gap-3 mx-auto">
+            <span>📞</span> ${t("receive_code_by_voice")}
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -695,6 +722,51 @@ function renderConfirmation() {
 }
 
 function renderQuestionnaire() {
+  const isCardio = state.selections.specialtyId === "cardio";
+  
+  if (isCardio) {
+    const questions = [
+      { id: "pain", key: "q_cardio_pain" },
+      { id: "breath", key: "q_cardio_breath" },
+      { id: "palpitations", key: "q_cardio_palpitations" },
+      { id: "fatigue", key: "q_cardio_fatigue" }
+    ];
+
+    return `
+      <div class="space-y-16 reveal max-w-4xl mx-auto">
+        <div class="text-center space-y-4">
+          <h1 class="text-6xl font-black text-hospital-primary uppercase tracking-tighter">${t("questionnaire_title")}</h1>
+          <p class="text-2xl font-bold text-slate-400">${t("questionnaire_desc")}</p>
+        </div>
+        
+        <div class="space-y-8">
+          ${questions.map((q) => `
+            <div class="question-card space-y-8">
+              <label class="block font-black text-2xl text-slate-800 uppercase tracking-tight text-center md:text-left">${t(q.key)}</label>
+              <div class="flex flex-col space-y-4">
+                <div class="flex flex-wrap justify-center md:justify-between gap-3">
+                  ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => `
+                    <button class="scale-item ${state.selections.cardioAnswers?.[q.id] === num ? "active" : ""}" data-q="${q.id}" data-val="${num}">
+                      ${num}
+                    </button>
+                  `).join("")}
+                </div>
+                <div class="flex justify-between px-2">
+                  <span class="scale-label">⬅️ ${t("scale_low")}</span>
+                  <span class="scale-label">${t("scale_high")} ➡️</span>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+        
+        <button id="btn-submit-questionnaire" class="btn-primary w-full text-4xl py-10 uppercase tracking-widest font-black shadow-2xl mt-12">
+          ${t("submit_questionnaire")} 🚀
+        </button>
+      </div>
+    `;
+  }
+
   return `
     <div class="space-y-16 reveal max-w-3xl mx-auto">
       <h1 class="text-5xl font-black text-hospital-primary uppercase tracking-tighter text-center">${t("questionnaire_title")}</h1>
@@ -983,6 +1055,33 @@ function attachEventListeners() {
     };
   }
 
+  const btnVoiceCode = document.getElementById("btn-voice-code");
+  if (btnVoiceCode) {
+    btnVoiceCode.onclick = async () => {
+      state.isLoading = true;
+      await updateUI();
+      // Simulate voice call request
+      await new Promise(r => setTimeout(r, 1500));
+      await notificationService.sendSMSVerification(state.selections.phone);
+      state.isLoading = false;
+      await updateUI();
+      if (state.mode === "beginner") {
+        voice.speak(t("magic_link_sent"));
+      }
+    };
+  }
+
+  const btnCallAppointment = document.getElementById("btn-call-appointment");
+  if (btnCallAppointment) {
+    btnCallAppointment.onclick = async () => {
+      const hospitalPhone = t("help_fallback").split(": ")[1] || "03 217 71 11";
+      addBotMessage(`${t("call_for_appointment")} : ${hospitalPhone}`, "bot");
+      // Open dialer if on mobile
+      window.location.href = `tel:${hospitalPhone.replace(/\s/g, "")}`;
+    };
+  }
+
+
   const btnBack = document.getElementById("btn-back");
   if (btnBack) btnBack.onclick = goBack;
 
@@ -1064,9 +1163,27 @@ function attachEventListeners() {
     };
   }
 
+  document.querySelectorAll(".scale-item").forEach((button) => {
+    button.onclick = async () => {
+      const qId = button.dataset.q;
+      const val = parseInt(button.dataset.val);
+      if (!state.selections.cardioAnswers) state.selections.cardioAnswers = {};
+      state.selections.cardioAnswers[qId] = val;
+      await updateUI();
+    };
+  });
+
   const btnSubmitQuestionnaire = document.getElementById("btn-submit-questionnaire");
   if (btnSubmitQuestionnaire) {
     btnSubmitQuestionnaire.onclick = async () => {
+      // For cardio, we could validate that all questions are answered
+      if (state.selections.specialtyId === "cardio") {
+        const questions = ["pain", "breath", "palpitations", "fatigue"];
+        const unanswered = questions.filter(q => state.selections.cardioAnswers[q] === undefined);
+        if (unanswered.length > 0 && state.mode === "beginner") {
+          // Highlight first unanswered? For now just proceed or alert
+        }
+      }
       await navigateTo("success");
     };
   }
@@ -1220,11 +1337,31 @@ function attachEventListeners() {
       }
     };
   });
+
+  const readerToggle = document.getElementById("reader-toggle");
+  if (readerToggle) {
+    readerToggle.onclick = async (e) => {
+      e.preventDefault(); // Stop bubbling immediately so we don't trigger the reader on the toggle itself
+      state.readerEnabled = !state.readerEnabled;
+      if (state.readerEnabled) voice.enabled = true;
+      await updateUI();
+    };
+  }
+
+  const dyslexicToggle = document.getElementById("dyslexic-toggle");
+  if (dyslexicToggle) {
+    dyslexicToggle.onclick = async () => {
+      state.dyslexicMode = !state.dyslexicMode;
+      localStorage.setItem("zas_dyslexic_mode", state.dyslexicMode);
+      await updateUI();
+    };
+  }
 }
 
 async function updateUI() {
   const app = document.getElementById("app");
-  app.className = `flex flex-col min-h-screen mode-${state.mode} ${state.isSidebarOpen ? "overflow-hidden" : ""}`;
+  app.className = `flex flex-col min-h-screen mode-${state.mode} ${state.isSidebarOpen ? "overflow-hidden" : ""} ${state.dyslexicMode ? "dyslexic-mode" : ""}`;
+  document.body.classList.toggle("dyslexic-mode", state.dyslexicMode);
   app.innerHTML = `${renderHeader()}${renderSidebar()}<main class="flex-grow container mx-auto px-4 py-12 max-w-7xl w-full">${state.isLoading ? renderLoader() : renderStep()}</main>${renderFooter()}${renderZasBot()}`;
   attachEventListeners();
 
@@ -1242,3 +1379,26 @@ if (!localStorage.getItem("zas_tutorial_completed")) {
   localStorage.setItem("zas_tutorial_completed", "true");
   setTimeout(() => startTutorialForStep("profile", state.lang), 500);
 }
+
+document.addEventListener("click", (e) => {
+  if (state.readerEnabled) {
+    const isReaderToggle = e.target.closest("#reader-toggle");
+    const isVoiceToggle = e.target.closest("#voice-toggle");
+    if (!isReaderToggle && !isVoiceToggle) {
+      // Find a meaningful element to read, so we don't just read the entire body text
+      const target = e.target.closest('button, a, label, h1, h2, h3, p, span, li, th, td, .card-zas, .profile-option, .category-toggle, input');
+      let text = "";
+      if (target) {
+        text = target.innerText || target.textContent || target.value || target.placeholder;
+      } else {
+        text = e.target.innerText || e.target.textContent;
+      }
+      
+      if (text && text.trim().length > 0) {
+        console.log("Lecture vocale :", text.trim());
+        voice.enabled = true; // Force enabled just in case
+        voice.speak(text.trim());
+      }
+    }
+  }
+}, true); // Use capture to read before elements are potentially destroyed by UI updates
